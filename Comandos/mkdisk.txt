@@ -1,6 +1,7 @@
 //Incorrectos
-Mkdisk $size=>2 $path=>”/home/angel/Documentos/Disquitos/” $name=>Disco_1.dsk
-mkdisk $SiZe=>0 $pAth=>”/home/angel/Documentos/Disquitos/” $namE=>Disco_3.dsk
+Mkdisk $size=>2 $path=>"/home/user/Documentos/Disquitos/" $name=>Disco_1.dsk
+mkdisk $SiZe=>0 $pAth=>"/home/user/Documentos/Disquitos/" $namE=>Disco_3.dsk
+Mkdisk $size=>32 $path=>"/home/user/Documentos/Disquitos/" $name=>pruebi/ta.dskw
 //Correctos
-Mkdisk $size=>32 $path=>”/home/angel/Documentos/Disquitos/” $name=>Disco_1.dsk
-mkdisk $SiZe=>8 $pAth=>”/home/angel/Documentos/Disquitos/” $namE=>Disco_3.dsk
+Mkdisk $size=>32 $path=>"/home/user/Documentos/Disquitos/" $name=>Disco_1.dsk
+mkdisk $SiZe=>8 $pAth=>"/home/user/Documentos/Disquitos/" $namE=>Disco_3.dsk

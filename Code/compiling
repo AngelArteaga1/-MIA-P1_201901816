@@ -2,4 +2,6 @@ c++ \
     main.cpp \
     ./analizador/analizador.cpp \
     ./mkdisk/mkdisk.cpp \
+    ./rmdisk/rmdisk.cpp \
+    ./fdisk/fdisk.cpp \
 -o run

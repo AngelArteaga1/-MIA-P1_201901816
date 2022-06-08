@@ -1,0 +1,5 @@
+//Incorrectos
+rmDisk $path=>"/home/user/mis discos/Disco_4.dsk"
+//Correctos
+rmDisk $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk"
+rmDisk $path=>"/home/user/Documentos/Disquitos/Disco_3.dsk"

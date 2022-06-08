@@ -15,12 +15,11 @@ typedef struct{
 }particion;
 
 typedef struct{
-    int d_tam;
-    time_t creacion;
-    int asignacion;
-    char p_tipo;
-    particion particiones[4];
-}Disco;
+    int m_tam;
+    int m_asignacion;
+    time_t m_creacion;
+    particion m_particiones[4];
+}Mbr;
 
 typedef struct{
     char e_estado;
