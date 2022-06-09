@@ -21,17 +21,17 @@ void set_formato(FILE *archivo, int size){
     for(int i = 0; i < size; i++) fwrite(&buffer,1000,1,archivo);
 }
 
-void create_mkdisk(string path, string name, int size, Mbr master){
+void create_mkdisk(string path, string name, int size, MBR master){
     //Inicializamos el mbr
-    master.m_creacion = time(nullptr);
-    master.m_creacion = (int)time(nullptr);
+    master.mbr_fecha_creacion = time(nullptr);
+    master.mbr_disk_signature = (int)time(nullptr);
     for (int i = 0; i < 4; i++) {
-        master.m_particiones[i].p_estado='0';
-        master.m_particiones[i].p_tam = 0;
-        master.m_particiones[i].p_type = '0';
-        master.m_particiones[i].p_comienzo = -1;
-        master.m_particiones[i].p_tipo = '0';
-        strcpy(master.m_particiones[i].p_nombre,"");
+        master.mbr_partitiones[i].part_status='0';
+        master.mbr_partitiones[i].part_type = '0';
+        master.mbr_partitiones[i].part_fit = '0';
+        master.mbr_partitiones[i].part_start = -1;
+        master.mbr_partitiones[i].part_size = 0;
+        strcpy(master.mbr_partitiones[i].part_name,"");
     }
 
     //Verificamos si la ruta existe, si no la creamos
@@ -53,7 +53,7 @@ void create_mkdisk(string path, string name, int size, Mbr master){
     //Escribimos el mbr en la posicion 0
     archivo = fopen(ruta, "rb+");
     fseek(archivo, 0, SEEK_SET);
-    fwrite(&master, sizeof(Mbr),1, archivo);
+    fwrite(&master, sizeof(MBR),1, archivo);
     fclose(archivo);
 
     //Mensaje de success
@@ -63,12 +63,12 @@ void create_mkdisk(string path, string name, int size, Mbr master){
 
 void mkdisk::make_mkdisk(mkdisk *disco){
     //Validaciones
-    if(disco->size <= 0) { cout << "[Error] > El tamaño del disco debe de ser mayor o igual a 0" << endl; return;}
+    if(disco->size < 0) { cout << "[Error] > El tamaño del disco debe de ser mayor a 0" << endl; return;}
     if(disco->size % 8 != 0) { cout << "[Error] > El tamaño del disco no es multiplo de 8" << endl; return;}
     if(!verify_name(disco->name)) { cout << "[Error] > El nombre del disco no es correcto" << endl; return;}
     //Inicializamos el discos
-    Mbr master;
-    master.m_tam = disco->size*1000;
+    MBR master;
+    master.mbr_tamano = disco->size*1000;
     //Creamos el disco
     create_mkdisk(disco->path, disco->name, disco->size*1000, master);
 }

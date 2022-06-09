@@ -111,7 +111,7 @@ void analizar_fdisk(char *parametros){
     //Pasamos a la siguiente posicion
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
-    fdisk *disco = new fdisk();
+    fdisk *particion = new fdisk();
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual
         string tmpParam = parametros;
@@ -119,40 +119,40 @@ void analizar_fdisk(char *parametros){
         string valor = get_valor_parametro(tmpParam);
         //Verificamos cual parametro es para inicializar el objeto (los parametros ya vienen en lowercase)
         if(tipo == "$size"){
-            disco->size = stoi(valor);
+            particion->size = stoi(valor);
         } else if (tipo == "@unit"){
-            disco->unidad = valor;
+            particion->unidad = valor;
         } else if (tipo == "$path"){
             valor = delete_comillas(valor);
-            disco->path = valor;
+            particion->path = valor;
         } else if (tipo == "@type"){
-            disco->tipo = valor;
+            particion->tipo = valor;
         } else if (tipo == "@fit"){
-            disco->ajuste = valor;
+            particion->ajuste = valor;
         }  else if (tipo == "@delete"){
-            disco->eliminar = valor;
+            particion->eliminar = valor;
         } else if (tipo == "$name"){
-            disco->nombre = valor;
+            particion->nombre = valor;
         } else if (tipo == "@add"){
-            disco->tipo = valor;
+            particion->agregar = stoi(valor);
         } else if (tipo == "@mov"){
-            disco->mov = true;
+            particion->mov = true;
         } 
         parametros = strtok(NULL, " ");
     }
     //Imprimimos la clase de particion
-    cout << "size: " << disco->size << endl;
-    cout << "unit: " << disco->unidad << endl;
-    cout << "path: " << disco->path << endl;
-    cout << "type: " << disco->tipo << endl;
-    cout << "fit: " << disco->ajuste << endl;
-    cout << "delete: " << disco->eliminar << endl;
-    cout << "name: " << disco->nombre << endl;
-    cout << "add: " << disco->agregar << endl;
-    cout << "mov: " << disco->mov << endl;
+    cout << "size: " << particion->size << endl;
+    cout << "unit: " << particion->unidad << endl;
+    cout << "path: " << particion->path << endl;
+    cout << "type: " << particion->tipo << endl;
+    cout << "fit: " << particion->ajuste << endl;
+    cout << "delete: " << particion->eliminar << endl;
+    cout << "name: " << particion->nombre << endl;
+    cout << "add: " << particion->agregar << endl;
+    cout << "mov: " << particion->mov << endl;
 
     //Creamos la particion
-    //disco->make_mkdisk(disco);
+    particion->make_fdisk(particion);
 }
 
 /*Funcion que define que comando es el que hay que ejecutar*/

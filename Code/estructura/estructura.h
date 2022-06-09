@@ -6,29 +6,32 @@
 using namespace std;
 
 typedef struct{
-    char p_estado;
-    char p_type;
-    int p_tam;
-    int p_comienzo;
-    char p_tipo;
-    char p_nombre[16];
-}particion;
+    char part_status;
+    char part_fit;
+    int part_start;
+    int part_size;
+    int part_next;
+    char part_name[16];
+}EBR;
 
 typedef struct{
-    int m_tam;
-    int m_asignacion;
-    time_t m_creacion;
-    particion m_particiones[4];
-}Mbr;
+    char part_status;
+    char part_type;
+    char part_fit;
+    int part_start;
+    int part_size;
+    char part_name[16];
+}Particion;
 
 typedef struct{
-    char e_estado;
-    char e_tipo;
-    int e_comienzo;
-    int e_tam;
-    int e_siguiente;
-    char e_nombre[16];
-}ext;
+    int mbr_tamano;
+    int mbr_disk_signature;
+    time_t mbr_fecha_creacion;
+    Particion mbr_partitiones[4];
+}MBR;
+
+
+/************************* NO CONFIRMADAS ****************************/
 
 typedef struct{
     int s_filesystem_type;
