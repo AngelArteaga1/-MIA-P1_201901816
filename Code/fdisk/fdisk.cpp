@@ -1,4 +1,3 @@
-
 #include "fdisk.h"
 #include <stdlib.h>
 #include <string.h>
@@ -9,454 +8,113 @@
 
 fdisk::fdisk(){ }
 
-/*
-int buscParticion(string nombre, string path){
-    FILE *archivo;
-    Disco master;
-    if(archivo = fopen(path.c_str(),"rb+")){
-        int NParticionE = -1;
-        fseek(archivo, 0, SEEK_SET);
-        fread(&master, sizeof(Disco), 1, archivo);
-        for (int i = 0; i < 4; i++) {
-            if (master.particiones[i].p_type == 'E'){
-                NParticionE = i;
-                break;
+
+/*******************************  ESTAS SON FUNCIONES DE AYUDA, DEVUELVEN APUNTADORES O VALORES ***********************************/
+
+int get_partition_extendida(MBR master){
+    for (int i = 0; i < 4; i++)
+        if(master.mbr_partitiones[i].part_type == 'E') return i;
+    return -1;
+}
+
+int get_memory_used_extendida(string nombre, string path){
+    FILE *archivo  = fopen(path.c_str(),"rb+");
+    MBR master;
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
+    int num = get_partition_extendida(master);
+    int size = 0;
+    if(num != -1){
+        //Obtenemos el primer ebr de la particion extendida
+        EBR Extendida;
+        fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+        fread(&Extendida, sizeof(EBR), 1 , archivo);
+        //Iteramos hasta encontrar a la particion logica
+        while ((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start)) {
+            size += Extendida.part_size;
+            if(Extendida.part_next == -1) return size;
+            //seguimos iterando
+            fseek(archivo, Extendida.part_next, SEEK_SET);
+            fread(&Extendida, sizeof(EBR), 1 , archivo);
+        }
+    }
+    fclose(archivo);
+    return -1;
+}
+
+int find_partition_logica(string name, string path){
+    FILE *archivo = fopen(path.c_str(),"rb+");
+    MBR master;
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
+    int num = get_partition_extendida(master);
+    if(num != -1){
+        EBR Extendida;
+        fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+        fread(&Extendida, sizeof(EBR), 1 , archivo);
+        //Iteramos hasta encontrar la particion logica
+        while ((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start)) {
+            if (strcmp(Extendida.part_name, name.c_str()) == 0){
+                //Retornamos la posicion exacta donde el ebr comienza
+                return (ftell(archivo) - sizeof(EBR));
+            }
+            if(Extendida.part_next == -1) break;
+            //Vamos a la siguiente posicion
+            fseek(archivo, Extendida.part_next, SEEK_SET);
+            fread(&Extendida, sizeof(EBR), 1 , archivo);
+        }
+    }
+    fclose(archivo);
+    return -1;
+}
+
+int get_partition_primaria(MBR master, string name){
+    for (int i = 0; i < 4; i++) {
+        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
+            if(master.mbr_partitiones[i].part_type != 'E'){
+                return i;
             }
         }
-        if(NParticionE != -1){
-            ext Extendida;
-            fseek(archivo, master.particiones[NParticionE].p_comienzo, SEEK_SET);
-            fread(&Extendida, sizeof(ext), 1 , archivo);
-            while ((ftell(archivo)<master.particiones[NParticionE].p_tam + master.particiones[NParticionE].p_comienzo)) {
-                if (strcmp(Extendida.e_nombre,nombre.c_str())==0){
-                    //cout<<Extendida.e_comienzo;
-                    return (ftell(archivo)-sizeof(ext));
-                }
-                if(Extendida.e_siguiente == -1){
-                    break;
-                }
-                fseek(archivo, Extendida.e_siguiente, SEEK_SET);
-                fread(&Extendida, sizeof(ext), 1 , archivo);
-            }
-        }
-        fclose(archivo);
     }
     return -1;
 }
 
-int tamLogica(string nombre, string path){
-    FILE *archivo;
-    Disco master;
-    if(archivo = fopen(path.c_str(),"rb+")){
-        int NParticionE = -1;
-        fseek(archivo, 0, SEEK_SET);
-        fread(&master, sizeof(Disco), 1, archivo);
-        for (int i = 0; i < 4; i++) {
-            if (master.particiones[i].p_type == 'E'){
-                NParticionE = i;
-                break;
+bool is_partition_primaria(MBR master, string name){
+    for (int i = 0; i < 4; i++) {
+        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
+            if(master.mbr_partitiones[i].part_type != 'E'){
+                return true;
             }
         }
-        if(NParticionE != -1){
-            ext Extendida;
-            int tam =0;
-            fseek(archivo, master.particiones[NParticionE].p_comienzo, SEEK_SET);
-            fread(&Extendida, sizeof(ext), 1 , archivo);
-            while ((ftell(archivo)<master.particiones[NParticionE].p_tam + master.particiones[NParticionE].p_comienzo)) {
-                tam += Extendida.e_tam;
-                if(Extendida.e_siguiente == -1){
-                    return tam;
-                }
-                fseek(archivo, Extendida.e_siguiente, SEEK_SET);
-                fread(&Extendida, sizeof(ext), 1 , archivo);
-            }
-        }
-        fclose(archivo);
     }
-    return -1;
+    return false;
 }
 
-
-
-
-/*
-
-void AgregarParticion(string path, string nombre, int sizebyte){
-    FILE *archivo;
-    Disco master;
-
-    string tipo = "Nulo";
-    if(sizebyte > 0){
-        tipo = "agregar";
-    }
-
-    if(archivo=fopen(path.c_str(), "rb+")){
-        bool montado = ListaMontado(path, nombre);
-        if(!montado){
-            bool Exparticion = false;
-            int NParticion = -1;
-            int NParticionE = -1;
-            fseek(archivo, 0, SEEK_SET);
-            fread(&master, sizeof(Disco),1 , archivo);
-            for (int i = 0; i < 4; i++) {
-                //cout << master.particiones[i].p_type<<endl;
-                if(strcmp(master.particiones[i].p_nombre,nombre.c_str())==0){
-                    if(master.particiones[i].p_type=='E'){
-                        Exparticion = true;
-                    }
-                    NParticion = i;
-                    break;
-                }else if(master.particiones[i].p_type =='E'){
-                    Exparticion = true;
-                    NParticionE = i;
-                }
+bool is_partition_extendida(MBR master, string name){
+    for (int i = 0; i < 4; i++) {
+        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
+            if(master.mbr_partitiones[i].part_type == 'E'){
+                return true;
             }
-            if(NParticion != -1){
-                if(!Exparticion){
-                    if (tipo == "agregar"){
-                        if(NParticion != 3){
-                            int comprobar = master.particiones[NParticion+1].p_comienzo - (master.particiones[NParticion].p_comienzo + master.particiones[NParticion].p_tam);
-                            if(comprobar != 0){
-                                if(comprobar>=sizebyte){
-                                    master.particiones[NParticion].p_tam = master.particiones[NParticion].p_tam + sizebyte;
-                                    fseek(archivo, 0, SEEK_SET);
-                                    fwrite(&master, sizeof(Disco), 1, archivo);
-                                    printf("Se agrego mas memoria a la particion\n");
-                                }else if(master.particiones[NParticion+1].p_estado == '0' && master.particiones[NParticion+1].p_tam == 0){
-                                    if(sizebyte<= (master.d_tam-(master.particiones[NParticion].p_tam+master.particiones[NParticion].p_comienzo))){
-                                        master.particiones[NParticion].p_tam = master.particiones[NParticion].p_tam + sizebyte;
-                                        fseek(archivo, 0, SEEK_SET);
-                                        fwrite(&master, sizeof(Disco), 1, archivo);
-                                        printf("Se agrego mas memoria a la particion\n");
-                                    }else{
-                                        printf("Error no hay suficiente espacio a la derecha\n");
-                                    }
-                                }else{
-                                    printf("Error no hay suficiente espacio a la derecha\n");
-                                }
-                            }else{
-                                if(master.particiones[NParticion+1].p_estado == '1'){
-                                    if(sizebyte<= master.particiones[NParticion+1].p_tam){
-                                        master.particiones[NParticion].p_tam = master.particiones[NParticion].p_tam + sizebyte;
-                                        master.particiones[NParticion+1].p_comienzo =master.particiones[NParticion+1].p_comienzo + sizebyte;
-                                        master.particiones[NParticion+1].p_tam = master.particiones[NParticion+1].p_tam - sizebyte;
-                                        fseek(archivo, 0, SEEK_SET);
-                                        fwrite(&master, sizeof(Disco), 1, archivo);
-                                        printf("Se agrego mas memoria a la particion\n");
-                                    }else{
-                                        printf("Error no hay suficiente espacio a la derecha\n");
-                                    }
-                                }else{
-                                    printf("Error no hay suficiente espacio a la derecha\n");
-                                }
-
-                            }
-                        }else{
-                            int comprobar =  (master.d_tam + (int)sizeof(Disco)) - (master.particiones[NParticion].p_tam+master.particiones[NParticion].p_comienzo);
-                            if (comprobar!=0){
-                                if(comprobar>= sizebyte){
-                                    master.particiones[NParticion].p_tam = (master.particiones[NParticion].p_tam - sizebyte);
-                                    fseek(archivo, 0, SEEK_SET);
-                                    fwrite(&master, sizeof(Disco), 1 , archivo);
-                                    printf("Se agrego mas memoria a la particion\n");
-                                }else{
-                                    printf("Error no hay suficiente espacio a la derecha\n");
-                                }
-                            }else{
-                                printf("Error no hay suficiente espacio a la derecha\n");
-                            }
-                        }
-                    }else{
-                        if(-(sizebyte) >= master.particiones[NParticion].p_tam){
-                            printf("Error la cantidad que desea quitar excede al size de la particion\n");
-                        }else{
-                            master.particiones[NParticion].p_tam = (master.particiones[NParticion].p_tam + sizebyte);
-                            fseek(archivo, 0, SEEK_SET);
-                            fwrite(&master, sizeof(Disco), 1, archivo);
-                            printf("Se quito memoria a la particion\n");
-                        }
-                    }
-                }else{
-                    if(tipo == "agregar"){
-                        if(NParticion !=3){
-                            int comprobar = master.particiones[NParticion+1].p_comienzo - (master.particiones[NParticion].p_comienzo+master.particiones[NParticionE].p_tam);
-                            if(comprobar !=0){
-                                if (comprobar>= sizebyte){
-                                    master.particiones[NParticion].p_tam= master.particiones[NParticion].p_tam + sizebyte;
-                                    fseek(archivo, 0, SEEK_SET);
-                                    fwrite(&master, sizeof(Disco), 1, archivo);
-                                    printf("Se agrego mas memoria a la particion\n");
-                                }else if(master.particiones[NParticion+1].p_estado == '0' && master.particiones[NParticion+1].p_tam == 0){
-                                    if(sizebyte<= (master.d_tam-(master.particiones[NParticion].p_tam+master.particiones[NParticion].p_comienzo))){
-                                        master.particiones[NParticion].p_tam = master.particiones[NParticion].p_tam + sizebyte;
-                                        fseek(archivo, 0, SEEK_SET);
-                                        fwrite(&master, sizeof(Disco), 1, archivo);
-                                        printf("Se agrego mas memoria a la particion\n");
-                                    }else{
-                                        printf("Error no hay suficiente espacio a la derecha\n");
-                                    }
-                                }else{
-                                    printf("Error no hay suficiente espacio a la derecha\n");
-                                }
-                            }else{
-                                if(master.particiones[NParticion+1].p_estado =='1'){
-                                    if(sizebyte<=master.particiones[NParticion+1].p_tam){
-                                        master.particiones[NParticion].p_tam = master.particiones[NParticion].p_tam + sizebyte;
-                                        master.particiones[NParticion+1].p_comienzo = master.particiones[NParticion+1].p_comienzo + sizebyte;
-                                        master.particiones[NParticion+1].p_tam = master.particiones[NParticion+1].p_tam - sizebyte;
-                                        fseek(archivo,0, SEEK_SET);
-                                        fwrite(&master, sizeof(Disco), 1, archivo);
-                                        printf("Se agrego mas memoria a la particion\n");
-                                    }else{
-                                        printf("Error no hay suficiente espacio a la derecha\n");
-                                    }
-                                }else{
-                                    printf("Error no hay suficiente espacio a la derecha\n");
-                                }
-                            }
-                        }else{
-                            int comprobar = (master.d_tam + (int)sizeof(Disco)) - (master.particiones[NParticion].p_tam+master.particiones[NParticion].p_comienzo);
-                            if (comprobar !=0){
-                                if(comprobar >= sizebyte){
-                                    master.particiones[NParticion].p_tam = master.particiones[NParticion].p_tam + sizebyte;
-                                    fseek(archivo, 0, SEEK_SET);
-                                    fwrite(&master, sizeof(Disco), 1 , archivo);
-                                    printf("Se agrego mas memoria a la particion\n");
-                                }else{
-                                    printf("Error no hay suficiente espacio a la derecha\n");
-                                }
-                            }else{
-                                printf("Error no hay suficiente espacio a la derecha\n");
-                            }
-                        }
-                    }else{
-                        if (sizebyte >= master.particiones[NParticionE].p_tam){
-                            printf("Error la cantidad que desea quitar excede al size de la particion\n");
-                        }else{
-                            ext Extendida;
-                            fseek(archivo, master.particiones[NParticion].p_comienzo, SEEK_SET);
-                            fread(&Extendida, sizeof(ext), 1 , archivo);
-                            while((ftell(archivo)<master.particiones[NParticion].p_tam+master.particiones[NParticion].p_comienzo)&&Extendida.e_siguiente !=-1){
-                                fseek(archivo, Extendida.e_siguiente, SEEK_SET);
-                                fread(&Extendida, sizeof(ext), 1 , archivo);
-                            }
-                            int comprobar = (master.particiones[NParticion].p_comienzo+master.particiones[NParticion].p_tam) + sizebyte;
-                            if(comprobar>(Extendida.e_comienzo+Extendida.e_tam)){
-                                master.particiones[NParticion].p_tam = master.particiones[NParticion].p_tam + sizebyte;
-                                fseek(archivo,0, SEEK_SET);
-                                fwrite(&master, sizeof(Disco), 1, archivo);
-                                printf("Se quito memoria a la particion\n");
-                            }else{
-                                printf("Error porque la particion logica se corromperia\n");
-                            }
-                        }
-                    }
-                }
-            }else{
-                if(NParticionE != -1){
-                    int buscar = buscParticion(nombre, path);
-                    int total = tamLogica(nombre, path);
-                    if(buscar != -1){
-                        if (tipo == "agregar"){
-                            ext Extendida;
-                            fseek(archivo,buscar, SEEK_SET);
-                            fread(&Extendida, sizeof(ext), 1, archivo);
-                            //cout<< master.particiones[NParticionE].p_tam<<endl;
-                            if(Extendida.e_siguiente == -1 && master.particiones[NParticionE].p_tam >= (total+sizebyte)){
-                                Extendida.e_tam = Extendida.e_tam + sizebyte;
-                                fseek(archivo, buscar, SEEK_SET);
-                                fwrite(&Extendida, sizeof(ext), 1, archivo);
-                                printf("Se agrego mas memoria a la particion\n");
-
-                            }else if ((Extendida.e_siguiente-(Extendida.e_comienzo+Extendida.e_tam))>= sizebyte && Extendida.e_siguiente != -1){
-                                Extendida.e_tam = Extendida.e_tam + sizebyte;
-                                fseek(archivo, buscar, SEEK_SET);
-                                fwrite(&Extendida, sizeof(ext), 1, archivo);
-                                printf("Se agrego mas memoria a la particion\n");
-                            }else{
-                                printf("Error no hay suficiente espacio a la derecha\n");
-                            }
-                        }else{
-                            ext Extendida;
-                            fseek(archivo,buscar, SEEK_SET);
-                            fread(&Extendida, sizeof(ext), 1, archivo);
-                            if (-(sizebyte) >= Extendida.e_tam){
-                                printf("Error porque la particion logica se corromperia\n");
-                            }else{
-                                //cout<< Extendida.e_tam<<endl;
-                                Extendida.e_tam = Extendida.e_tam + sizebyte;
-                                fseek(archivo, buscar, SEEK_SET);
-                                fwrite(&Extendida, sizeof(ext), 1, archivo);
-                                printf("Se quito memoria a la particion\n");
-                            }
-                        }
-                    }else{
-                        printf("Error no se encontro la particion con el mismo nombre\n");
-                    }
-                }else{
-                    printf("Error no se encontro la particion con el mismo nombre\n");
-                }
-            }
-        }else{
-            printf("Error la particion se encuentra montada\n");
         }
-        fclose(archivo);
-    }else{
-        printf("Error no se encontro el disco\n");
     }
-
+    return false;
 }
-
-void EliminarParticion(string path, string nombre, string tipo){
-    FILE *archivo;
-    Disco master;
-
-    if(archivo = fopen(path.c_str(),"rb+")){
-        bool montado = ListaMontado(path, nombre);
-        if(!montado){
-            int NParticion = -1;
-            int NParticionE = -1;
-            char buffer = '\0';
-            bool Exparticion = false;
-            fseek(archivo, 0, SEEK_SET);
-            fread(&master, sizeof(Disco), 1, archivo);
-            for (int i = 0; i < 4; i++) {
-                if(strcmp(master.particiones[i].p_nombre,nombre.c_str())==0){
-                    NParticion = i;
-                    if(master.particiones[i].p_type=='E'){
-                        Exparticion = true;
-                    }
-                    break;
-                }else if (master.particiones[i].p_type == 'E'){
-                    NParticionE = i;
-                }
-            }
-
-            cout << "Estas seguro de eliminar la particion S/N > ";
-            string confirmacion;
-            getline(cin, confirmacion);
-            if (confirmacion == "S" | confirmacion == "s"){
-                if (NParticion != -1){
-                    if(!Exparticion){
-                        if (tipo == "FAST"){
-                            master.particiones[NParticion].p_estado = '1';
-                            strcpy(master.particiones[NParticion].p_nombre, "");
-                            fseek(archivo, 0, SEEK_SET);
-                            fwrite(&master, sizeof(Disco), 1, archivo);
-                            printf("Se elimino correctamente la particion primaria\n");
-                        }else{
-                            master.particiones[NParticion].p_estado = '1';
-                            strcpy(master.particiones[NParticion].p_nombre, "");
-
-                            fseek(archivo, master.particiones[NParticion].p_comienzo, SEEK_SET);
-                            fwrite(&buffer, 1, master.particiones[NParticion].p_tam,archivo);
-
-                            fseek(archivo, 0, SEEK_SET);
-                            fwrite(&master, sizeof(Disco),1, archivo);
-
-
-                            printf("Se elimino correctamente la particion primaria\n");
-                        }
-                    }else{
-                        if(tipo=="FAST"){
-                            master.particiones[NParticion].p_estado = '1';
-                            master.particiones[NParticion].p_type='0';
-                            strcpy(master.particiones[NParticion].p_nombre, "");
-                            fseek(archivo, 0, SEEK_SET);
-                            fwrite(&master, sizeof(Disco), 1, archivo);
-                            printf("Se elimino correctamente la particion extendida\n");
-                        }else{
-                            master.particiones[NParticion].p_estado = '1';
-                            master.particiones[NParticion].p_type='0';
-                            strcpy(master.particiones[NParticion].p_nombre, "");
-
-                            fseek(archivo, master.particiones[NParticion].p_comienzo, SEEK_SET);
-                            fwrite(&buffer, 1, master.particiones[NParticion].p_tam,archivo);
-
-                            fseek(archivo, 0, SEEK_SET);
-                            fwrite(&master, sizeof(Disco),1, archivo);
-
-                            printf("Se elimino correctamente la particion extendida\n");
-                        }
-                    }
-                }else{
-                    if(NParticionE != -1){
-                        bool comprobar = false;
-                        ext Extendida;
-                        fseek(archivo, master.particiones[NParticionE].p_comienzo, SEEK_SET);
-                        fread(&Extendida, sizeof(ext), 1 , archivo);
-                        if (Extendida.e_tam != 0){
-                            while ((ftell(archivo)<master.particiones[NParticionE].p_tam + master.particiones[NParticionE].p_comienzo)) {
-                                if (strcmp(Extendida.e_nombre,nombre.c_str())==0){
-                                    comprobar = true;
-                                    break;
-                                }
-                                if(Extendida.e_siguiente == -1){
-                                    break;
-                                }
-                                fseek(archivo, Extendida.e_siguiente, SEEK_SET);
-                                fread(&Extendida, sizeof(ext), 1 , archivo);
-                            }
-                        }
-                        if (comprobar){
-                            if(tipo=="FAST"){
-                                Extendida.e_estado = '1';
-                                strcpy(Extendida.e_nombre, "");
-
-                                //cout<<Extendida.e_siguiente<<endl;
-
-                                fseek(archivo, ftell(archivo)-sizeof(ext), SEEK_SET);
-                                fwrite(&Extendida, sizeof(ext), 1, archivo);
-                                //cout<<Extendida.e_tam<<endl;
-
-                                printf("Se elimino correctamente la particion logica\n");
-                            }else{
-                                Extendida.e_estado = '1';
-                                strcpy(Extendida.e_nombre, "");
-
-                                fseek(archivo, ftell(archivo)-sizeof(ext), SEEK_SET);
-                                fwrite(&buffer, sizeof(ext), 1, archivo);
-
-                                fseek(archivo, ftell(archivo)-sizeof(ext), SEEK_SET);
-                                fwrite(&Extendida, sizeof(ext), 1, archivo);
-
-                                printf("Se elimino correctamente la particion extendida\n");
-                            }
-                        }else{
-                            printf("Error no se encontro la particion con el mismo nombre\n");
-                        }
-                    }else{
-                        printf("Error no se encontro la particion con el mismo nombre\n");
-                    }
-                }
-            }else{
-                printf("Se cancelo la eliminacion de la parcicion\n");
-            }
-        }else{
-            printf("Error la particion se encuentra montada\n");
-        }
-        fclose(archivo);
-    }else{
-        printf("Error no se encontro el disco\n");
-    }
-}*/
 
 bool exist_partition(string path, string name, MBR master){
-    FILE *archivo;
     //Iteramos las particiones
     for (int i = 0; i < 4; ++i) {
         //Verificamos si existe el nombre en una particion primaria
-        //cout << "nombre de la particion: " << master.mbr_partitiones[i].part_name << ", type: " << master.mbr_partitiones[i].part_type << endl;
         if((strcmp(name.c_str(), master.mbr_partitiones[i].part_name)) == 0){
-            fclose(archivo);
             return true;
         }else if (master.mbr_partitiones[i].part_type == 'E'){
-            //Verificamos si la particion no existe en una particion extendida
+            //Verificamos si la particion no existe en una particion logica
             EBR sub;
             int extendida = i;
+            FILE *archivo = fopen(path.c_str(), "rb+");
             //Ponemos el puntero al inicio de la particion extendida
             fseek(archivo,master.mbr_partitiones[extendida].part_start, SEEK_SET);
-            int posicionFinal = master.mbr_partitiones[extendida].part_size + master.mbr_partitiones[extendida].part_start;
+            int posicionFinal = master.mbr_partitiones[extendida].part_start + master.mbr_partitiones[extendida].part_size;
             //Recorremos todas las particiones logicas
             while((fread(&sub, sizeof(EBR),1, archivo)) != 0 && (ftell(archivo) < posicionFinal)){
                 if(strcmp(sub.part_name, name.c_str()) == 0){
@@ -464,8 +122,7 @@ bool exist_partition(string path, string name, MBR master){
                     return true;
                 }
                 if(sub.part_next == -1){
-                    fclose(archivo);
-                    return false;
+                    break;
                 }
             }
             fclose(archivo);
@@ -478,12 +135,6 @@ bool exist_partition_extendida(MBR master){
     for (int i = 0; i < 4; i++)
         if(master.mbr_partitiones[i].part_type == 'E') return true;
     return false;
-}
-
-int get_partition_extendida(MBR master){
-    for (int i = 0; i < 4; i++)
-        if(master.mbr_partitiones[i].part_type == 'E') return i;
-    return -1;
 }
 
 int get_espacio_usado(MBR master){
@@ -516,6 +167,9 @@ int get_num_partition_free(MBR master, int size){
     }
     return -1;
 }
+
+
+/*******************************  ESTAS SON LAS FUNCIONES QUE REALIZAN TODAS LAS OPERACIONES DE PARTICIONES ***********************************/
 
 void make_primaria(string name, string path, int size, char fit){
     //Obtenemos el mbr
@@ -592,6 +246,7 @@ void make_extendida(string name, string path, int size, char fit){
         //VALIDACIONES
         //Verificamos si si podemos usar el espacio
         if((master.mbr_tamano-EspacioUse) < size){ cout << "[Error] > No hay suficiente espacio libre" << endl; fclose(archivo); return; }
+        //Verificamo si existe una particion con el mismo nombre
         if(exist_partition(path, name, master)){ cout << "[Error] > Ya existe una particion con el mismo nombre " << endl; fclose(archivo); return;}
 
         /**************** LLENAMOS LOS DATOS DE LA PARTICION *****************/
@@ -647,8 +302,12 @@ void make_logica(string name, string path, int size, char fit){
     fseek(archivo, 0, SEEK_SET);
     fread(&master, sizeof(MBR), 1, archivo);
 
+    cout << "pues deberia de llegar hasta aca jajaja" << endl;
+
     //Validaciones
+    //Verificamos si ya existe una particion extendida
     if(!exist_partition_extendida(master)){ cout << "[Error] > No existe una particion extendida en el disco" << endl; fclose(archivo); return;}
+    //Verificamos si ya existe una particion con el mismo nombre
     if(exist_partition(path, name, master)){ cout << "[Error] > Ya existe una particion con el mismo nombre " << endl; fclose(archivo); return;}
 
     //Obtenemos la posicion de la particion extendida, luego obtenemos el puntador del primer ebr
@@ -673,7 +332,7 @@ void make_logica(string name, string path, int size, char fit){
             fwrite(&Extenida, sizeof(EBR), 1, archivo);
             cout << "[Success] > Se creo correctamente la particion logica" << endl;
         }else{
-            cout << "[Error] > No hay suficiente espacio" << endl;
+            cout << "[Error] > No hay suficiente espacio dentro de la particion extendida" << endl;
         }
     }else{
         bool particion_eliminada = false;
@@ -698,21 +357,21 @@ void make_logica(string name, string path, int size, char fit){
         }
         //En caso de que la particion fue eliminada y se encuentra con status de baja
         if (particion_eliminada){
-                //Aprovechamos el ebr para poner los nuevos datos
-                Extenida.part_status = '0';
-                Extenida.part_size = size;
-                Extenida.part_fit = fit;
-                strcpy(Extenida.part_name, name.c_str());
-                //Escribimos el ebr nuevo
-                fseek(archivo, ftell(archivo)-sizeof(EBR), SEEK_SET);
-                fwrite(&Extenida, sizeof(EBR), 1, archivo);
-                //Mensaje de confirmacion
-                cout << "[Success] > Se creo correctamente la particion logica" << endl;
+            //Aprovechamos el ebr para poner los nuevos datos
+            Extenida.part_status = '0';
+            Extenida.part_size = size;
+            Extenida.part_fit = fit;
+            strcpy(Extenida.part_name, name.c_str());
+            //Escribimos el ebr nuevo
+            fseek(archivo, ftell(archivo)-sizeof(EBR), SEEK_SET);
+            fwrite(&Extenida, sizeof(EBR), 1, archivo);
+            //Mensaje de confirmacion
+            cout << "[Success] > Se creo correctamente la particion logica" << endl;
         }else{
             //Verificamos si hay espacio para escribir la particion
             int useEspacio = Extenida.part_size + Extenida.part_start + size;
             if((master.mbr_partitiones[num].part_size+master.mbr_partitiones[num].part_start) >= useEspacio){
-                //Actualizamos el actual ebr (el ultimo)
+                //Actualizamos el actual ebr (el ultimo), para que apunte al siguiente jeje
                 Extenida.part_next = Extenida.part_start + Extenida.part_size;
                 fseek(archivo, ftell(archivo)-sizeof(EBR), SEEK_SET);
                 fwrite(&Extenida, sizeof(EBR), 1, archivo);
@@ -724,6 +383,7 @@ void make_logica(string name, string path, int size, char fit){
                 Extenida.part_status = '0';
                 Extenida.part_next = -1;
                 Extenida.part_fit = fit;
+                //Escribimos sin un fseek porque el archivo quedo apuntando en el final cabal
                 strcpy(Extenida.part_name, name.c_str());
                 fwrite(&Extenida, sizeof(EBR), 1, archivo);
                 cout << "[Success] > Se creo correctamente la particion logica" << endl;
@@ -735,6 +395,415 @@ void make_logica(string name, string path, int size, char fit){
     fclose(archivo);
 }
 
+void update_partition(string name, string path, int size){
+    //Obtenemos el mbr del disco
+    FILE *archivo = fopen(path.c_str(), "rb+");
+    MBR master;
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR),1 , archivo);
+
+    //Validaciones
+    bool montado = false;
+    if(montado) { cout << "[Error] > No se puede actualizar una particion montada" << endl; fclose(archivo); return; }
+    if(size == 0) { cout << "[Error] > El tamaño para actualizar la particion es invalido" << endl; fclose(archivo); return; }
+    if(!exist_partition(path, name, master)) { cout << "[Error] > No existe una particion con ese nombre" << endl; fclose(archivo); return; }
+
+    //Miramos si tenemos que quitar o agregar espacio a la particion
+    bool agregar = size > 0 ? true : false;
+
+    //  SI ES PARTICION PRIMARIA
+    if(is_partition_primaria(master, name)){
+        //Actualizamos espacion dentro de la particion primaria
+        int num = get_partition_primaria(master, name);
+        if (agregar == true){
+            //Tenemos que agregar espacio a la particion
+            bool esUltimaParticion = num == 3 ? true : false;
+            if(!esUltimaParticion){
+                //ParticionSiguiente.start - posicionFinalDeLaParticionActual = diferencia entre una particion y la siguiente 
+                int diferencia = master.mbr_partitiones[num+1].part_start - (master.mbr_partitiones[num].part_start + master.mbr_partitiones[num].part_size);
+                if(diferencia != 0){
+                    //Quiere decir que si existe una diferencia de espacio entre esta particion y la siguiente
+                    if(diferencia >= size){
+                        //Quiere decir que si hay espacio sufiente para aumentar la particion primaria
+                        master.mbr_partitiones[num].part_size = master.mbr_partitiones[num].part_size + size;
+                        fseek(archivo, 0, SEEK_SET);
+                        fwrite(&master, sizeof(MBR), 1, archivo);
+                        cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                    }else if(master.mbr_partitiones[num+1].part_status == '0' && master.mbr_partitiones[num+1].part_size == 0){
+                        //Quiere decir que no es la ultima particion pero si la ultima que se ingreso
+                        //size es menor o igual que el size que esta disponible (size del disco menos el final de esta particion)
+                        if(size <= (master.mbr_tamano - (master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start))){
+                            //Quiere decir que si hay espacio dentro del disco para sumar espacio a la particion
+                            
+                            //Sumamos el size a la particion y actualizamos el mbr
+                            master.mbr_partitiones[num].part_size = master.mbr_partitiones[num].part_size + size;
+                            fseek(archivo, 0, SEEK_SET);
+                            fwrite(&master, sizeof(MBR), 1, archivo);
+                            cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                        }else{
+                            cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                        }
+                    }else{
+                        cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                    }
+                }else{
+                    //Quiere decir que no hay diferencia entre una particion y la otra
+                    //Revisamos si la siguiente particion fue eliminada
+                    if(master.mbr_partitiones[num+1].part_status == '1'){
+                        //Revisamos si cabe el espacio dentro de la particion siguiente eliminada
+                        if(size <= master.mbr_partitiones[num+1].part_size){
+                            //Si existe espacio, tenemos que actualizar ambas particiones
+                            master.mbr_partitiones[num].part_size = master.mbr_partitiones[num].part_size + size; //Aumentamos el size
+                            master.mbr_partitiones[num+1].part_start = master.mbr_partitiones[num+1].part_start + size; //Actualizamos el start de la siguiente
+                            master.mbr_partitiones[num+1].part_size = master.mbr_partitiones[num+1].part_size - size; //Actualizamos el size de la siguiente
+                            fseek(archivo, 0, SEEK_SET);
+                            fwrite(&master, sizeof(MBR), 1, archivo);
+                            cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                        }else{
+                            cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                        }
+                    }else{
+                        cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                    }
+                }
+            }else{
+                //Esto quiere decir que es la ultima particion del disco
+                //Diferencia entre el size del disco y la posicion final de la particion
+                int diferencia =  master.mbr_tamano - (master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start);
+                if (diferencia != 0){
+                    //Quiere decir que si hay diferencia, que hay algo de espacio libre
+                    if(diferencia >= size){
+                        //Si hay espacio para agregar, entonces agregamos
+                        master.mbr_partitiones[num].part_size = (master.mbr_partitiones[num].part_size - size);
+                        fseek(archivo, 0, SEEK_SET);
+                        fwrite(&master, sizeof(MBR), 1 , archivo);
+                        cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                    }else{
+                        cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                    }
+                }else{
+                    cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                }
+            }
+        }else{
+            //Esto quiere decir que tenemos que eliminar espacio en vez de agregar
+            if(-(size) >= master.mbr_partitiones[num].part_size){
+                cout << "[Error] > La cantidad que desea quitar excede al size de la particion" << endl;
+            }else{
+                //Quiere decir que si existe espacio, solo actualizamos la particion en el mbr
+                master.mbr_partitiones[num].part_size = (master.mbr_partitiones[num].part_size + size);
+                fseek(archivo, 0, SEEK_SET);
+                fwrite(&master, sizeof(MBR), 1, archivo);
+                cout << "[Success] > Se quito memoria a la particion" << endl;
+            }
+        }
+    }
+    //  SI ES PARTICION EXTENDIDA
+    else if(is_partition_extendida(master, name)){
+        //Actualizamos espacio dentro de la particion extendida
+        int num = get_partition_primaria(master, name);
+        if (agregar == true){
+            //Tenemos que agregar espacio a la particion
+            bool esUltimaParticion = num == 3 ? true : false;
+            if(!esUltimaParticion){
+                //ParticionSiguiente.start - posicionFinalDeLaParticionActual = diferencia entre una particion y la siguiente 
+                int diferencia = master.mbr_partitiones[num+1].part_start - (master.mbr_partitiones[num].part_start + master.mbr_partitiones[num].part_size);
+                if(diferencia != 0){
+                    //Quiere decir que si existe una diferencia de espacio entre esta particion y la siguiente
+                    if(diferencia >= size){
+                        //Quiere decir que si hay espacio sufiente para aumentar la particion primaria
+                        master.mbr_partitiones[num].part_size = master.mbr_partitiones[num].part_size + size;
+                        fseek(archivo, 0, SEEK_SET);
+                        fwrite(&master, sizeof(MBR), 1, archivo);
+                        cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                    }else if(master.mbr_partitiones[num+1].part_status == '0' && master.mbr_partitiones[num+1].part_size == 0){
+                        //Quiere decir que no es la ultima particion pero si la ultima que se ingreso
+                        //size es menor o igual que el size que esta disponible (size del disco menos el final de esta particion)
+                        if(size <= (master.mbr_tamano - (master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start))){
+                            //Quiere decir que si hay espacio dentro del disco para sumar espacio a la particion
+                            
+                            //Sumamos el size a la particion y actualizamos el mbr
+                            master.mbr_partitiones[num].part_size = master.mbr_partitiones[num].part_size + size;
+                            fseek(archivo, 0, SEEK_SET);
+                            fwrite(&master, sizeof(MBR), 1, archivo);
+                            cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                        }else{
+                            cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                        }
+                    }else{
+                        cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                    }
+                }else{
+                    //Quiere decir que no hay diferencia entre una particion y la otra
+                    //Revisamos si la siguiente particion fue eliminada
+                    if(master.mbr_partitiones[num+1].part_status == '1'){
+                        //Revisamos si cabe el espacio dentro de la particion siguiente eliminada
+                        if(size <= master.mbr_partitiones[num+1].part_size){
+                            //Si existe espacio, tenemos que actualizar ambas particiones
+                            master.mbr_partitiones[num].part_size = master.mbr_partitiones[num].part_size + size; //Aumentamos el size
+                            master.mbr_partitiones[num+1].part_start = master.mbr_partitiones[num+1].part_start + size; //Actualizamos el start de la siguiente
+                            master.mbr_partitiones[num+1].part_size = master.mbr_partitiones[num+1].part_size - size; //Actualizamos el size de la siguiente
+                            fseek(archivo, 0, SEEK_SET);
+                            fwrite(&master, sizeof(MBR), 1, archivo);
+                            cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                        }else{
+                            cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                        }
+                    }else{
+                        cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                    }
+                }
+            }else{
+                //Esto quiere decir que es la ultima particion del disco
+                //Diferencia entre el size del disco y la posicion final de la particion
+                int diferencia =  master.mbr_tamano - (master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start);
+                if (diferencia != 0){
+                    //Quiere decir que si hay diferencia, que hay algo de espacio libre
+                    if(diferencia >= size){
+                        //Si hay espacio para agregar, entonces agregamos
+                        master.mbr_partitiones[num].part_size = (master.mbr_partitiones[num].part_size - size);
+                        fseek(archivo, 0, SEEK_SET);
+                        fwrite(&master, sizeof(MBR), 1 , archivo);
+                        cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                    }else{
+                        cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                    }
+                }else{
+                    cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                }
+            }
+        }else{
+            //Esto quiere decir que tenemos que eliminar espacio en vez de agregar
+            if (-(size) >= master.mbr_partitiones[num].part_size){
+                cout << "[Error] > La cantidad que desea quitar excede al size de la particion" << endl;
+            }else{
+                //Si existe espacio para eliminar dentro de la particion
+
+                //Obtenemos el primer ebr de la particion extendida
+                EBR Extendida;
+                fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+                fread(&Extendida, sizeof(EBR), 1 , archivo);
+
+                //Iteramos las particiones logicas
+                while((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start) && Extendida.part_next !=-1){
+                    //Solo obtenemos el ebr de la ultima particion logica
+                    fseek(archivo, Extendida.part_next, SEEK_SET);
+                    fread(&Extendida, sizeof(EBR), 1 , archivo);
+                }
+                //Obtenemos la posicion donde terminaria la particion en caso de que se le quitara el espacio
+                int diferencia = (master.mbr_partitiones[num].part_start + master.mbr_partitiones[num].part_size) + size;
+                if(diferencia > (Extendida.part_start + Extendida.part_size)){
+                    //Quiere decir que si es posible quitar el pedazo a la particion extendida
+                    //Actualizamos y escribimos el nuevo mbr
+                    master.mbr_partitiones[num].part_size = master.mbr_partitiones[num].part_size + size;
+                    fseek(archivo,0, SEEK_SET);
+                    fwrite(&master, sizeof(MBR), 1, archivo);
+                    cout << "[Success] > Se quito memoria a la particion" << endl;
+
+                }else{
+                    cout << "[Error] > No es posible quitar la memoria porque la particion logica se corromperia" << endl;
+                }
+            }
+        }
+    } 
+    // ENTONCES ES UNA PARTICION LOGICA
+    else {
+        //Actualizamos espacio dentro de la particion logica
+        int num = get_partition_extendida(master);
+        int start_logica = find_partition_logica(name, path);
+        int memoria_usada = get_memory_used_extendida(name, path);
+        if(start_logica != -1){
+            if (agregar){
+                //Obtenemos el ebr de particion logica
+                EBR Extendida;
+                fseek(archivo,start_logica, SEEK_SET);
+                fread(&Extendida, sizeof(EBR), 1, archivo);
+                //Revisamos si no tiene siguiente particion logica y si cabe el espacio que estamos agregando
+                if(Extendida.part_next == -1 && master.mbr_partitiones[num].part_size >= (memoria_usada + size)){
+                    //Si tiene espacio, por lo que procedemos a escribir el nuevo espacio en el ebr
+                    Extendida.part_size = Extendida.part_size + size;
+                    //Escribimos el nuevo ebr
+                    fseek(archivo, start_logica, SEEK_SET);
+                    fwrite(&Extendida, sizeof(EBR), 1, archivo);
+                    cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                } //Revisamos si hay espacio entre el la particion y la siguiente
+                else if ((Extendida.part_next - (Extendida.part_start + Extendida.part_size)) >= size && Extendida.part_next != -1){ 
+                    //Si existe espacio entre las dos particiones por lo que podemos aumentar el size
+                    Extendida.part_size = Extendida.part_size + size;
+                    //Actualizamos el ebr con el nuevo size
+                    fseek(archivo, start_logica, SEEK_SET);
+                    fwrite(&Extendida, sizeof(EBR), 1, archivo);
+                    cout << "[Success] > Se agrego mas memoria a la particion" << endl;
+                }else{
+                    cout << "[Error] > No hay suficiente espacio a la derecha" << endl;
+                }
+            }else{
+                //Esto quiere decir que tenemos que eliminar espacio dentro de la particion
+
+                //Obtenemos el ebr de la particion
+                EBR Extendida;
+                fseek(archivo,start_logica, SEEK_SET);
+                fread(&Extendida, sizeof(EBR), 1, archivo);
+                if (-(size) >= Extendida.part_size){
+                    cout << "[Error] > La cantidad que desea quitar excede al size de la particion" << endl;
+                }else{
+                    //Podemos quitar espacio de la particion
+                    Extendida.part_size = Extendida.part_size + size;
+                    //Actualizamos el ebr nuevamente
+                    fseek(archivo, start_logica, SEEK_SET);
+                    fwrite(&Extendida, sizeof(EBR), 1, archivo);
+                    cout << "[Success] > Se quito memoria a la particion" << endl;
+                }
+            }
+        }else{
+            cout << "[Error] > No existe una particion con ese nombre" << endl;
+        }
+    }
+    
+    //Cerramos el archivo
+    fclose(archivo);
+}
+
+void delete_partition(string name, string path, string type){
+    //Obtenemos el mbr
+    char buffer = '\0';
+    FILE *archivo = fopen(path.c_str(),"rb+");
+    MBR master;
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
+
+    //Validaciones
+    bool montado = false;
+    if(montado) { cout << "[Error] > No se puede eliminar una particion montada" << endl; fclose(archivo); return; }
+    if(!exist_partition(path, name, master)) { cout << "[Error] > No existe una particion con ese nombre" << endl; fclose(archivo); return; }
+
+    //  SI LA PARTICION ES PRIMARIA
+    if(is_partition_primaria(master, name)){
+        //Primaria
+        int num = get_partition_primaria(master, name);
+        //Si la eliminacion es de tipo rapida
+        if (type == "FAST"){
+            //Solo hay que cambiar el status a deshabilitado y quitarle el nombre
+            master.mbr_partitiones[num].part_status = '1';
+            strcpy(master.mbr_partitiones[num].part_name, "");
+            //Actualizamos el mbr
+            fseek(archivo, 0, SEEK_SET);
+            fwrite(&master, sizeof(MBR), 1, archivo);
+
+            //Mensaje de confirmacion
+            cout << "[Success] > Se elimino correctamente la particion primaria" << endl;
+        }else{
+            //La eliminacion es completa, por lo que tenemos que borrar la data
+
+            //Actualizamos la particion
+            master.mbr_partitiones[num].part_status = '1';
+            strcpy(master.mbr_partitiones[num].part_name, "");
+
+            //Borramos la data que se encuentre dentro de la particion
+            fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+            fwrite(&buffer, 1, master.mbr_partitiones[num].part_size, archivo);
+
+            //Actualizamos el disco
+            fseek(archivo, 0, SEEK_SET);
+            fwrite(&master, sizeof(MBR),1, archivo);
+
+            //Mensaje de confimacion
+            cout << "[Success] > Se elimino correctamente la particion primaria" << endl;
+        }
+    }
+    //  SI LA PARTICION ES EXTENDIDA
+    else if(is_partition_extendida(master, name)){
+        int num = get_partition_extendida(master);
+        //Extenedida
+        //Si la eliminacion es de tipo rapida
+        if (type == "FAST"){
+            //Solo hay que cambiar el status a deshabilitado y quitarle el nombre
+            master.mbr_partitiones[num].part_status = '1';
+            master.mbr_partitiones[num].part_fit = '0';
+            strcpy(master.mbr_partitiones[num].part_name, "");
+            //Actualizamos el mbr
+            fseek(archivo, 0, SEEK_SET);
+            fwrite(&master, sizeof(MBR), 1, archivo);
+
+            //Mensaje de confirmacion
+            cout << "[Success] > Se elimino correctamente la particion " << endl;
+        }else{
+            //La eliminacion es completa, por lo que tenemos que borrar la data
+
+            //Actualizamos la particion
+            master.mbr_partitiones[num].part_status = '1';
+            master.mbr_partitiones[num].part_fit = '0';
+            strcpy(master.mbr_partitiones[num].part_name, "");
+
+            //Borramos la data que se encuentre dentro de la particion
+            fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+            fwrite(&buffer, 1, master.mbr_partitiones[num].part_size, archivo);
+
+            //Actualizamos el disco
+            fseek(archivo, 0, SEEK_SET);
+            fwrite(&master, sizeof(MBR),1, archivo);
+
+            //Mensaje de confimacion
+            cout << "[Success] > Se elimino correctamente la particion " << endl;
+        }
+    }
+    //  ENTONCES ES UNA PARTICION LOGICA
+    else {
+        //logica
+        int num = get_partition_extendida(master);
+        bool comprobar = false;
+
+        //Obtenemos la particion logica
+        EBR Extendida;
+        fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+        fread(&Extendida, sizeof(EBR), 1 , archivo);
+        if (Extendida.part_size != 0){
+            while ((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start)) {
+                //Si la particion tiene el mismo nombre
+                if (strcmp(Extendida.part_name, name.c_str()) == 0) break;
+                //Si llegamos a la ultima particion
+                if(Extendida.part_next == -1) break;
+                fseek(archivo, Extendida.part_next, SEEK_SET);
+                fread(&Extendida, sizeof(EBR), 1 , archivo);
+            }
+        }
+        //Si el tipo de eliminacion es de manera fast
+        if(type == "FAST"){
+            //La variable extendida trae el ebr de la particion logica que tenemos
+            Extendida.part_status = '1';
+            strcpy(Extendida.part_name, "");
+
+            //Actualizamos la particion con valores nulos
+            fseek(archivo, ftell(archivo) - sizeof(EBR), SEEK_SET);
+            fwrite(&Extendida, sizeof(EBR), 1, archivo);
+
+            //Mensaje de confirmacion
+            cout << "[Success] > Se elimino correctamente la particion logica" << endl;
+        }else{
+            //Es de tipo eliminacion completa
+            //Cambiamos la logica a los valores nulos
+            Extendida.part_status = '1';
+            strcpy(Extendida.part_name, "");
+
+            //Escribimos el 0 dentro de toda la particion logica
+            fseek(archivo, ftell(archivo)-sizeof(EBR), SEEK_SET);
+            fwrite(&buffer, sizeof(EBR), 1, archivo);
+
+            //Actualizamos el ebr de la particion logica eliminada
+            fseek(archivo, ftell(archivo)-sizeof(EBR), SEEK_SET);
+            fwrite(&Extendida, sizeof(EBR), 1, archivo);
+
+            //Mensaje de confirmacion
+            cout << "[Success] > Se elimino correctamente la particion logica" << endl;
+        }
+    }
+
+    //Cerramos el archivo
+    fclose(archivo);
+}
+
+
+/*******************************  FUNCION RAIZ QUE SE ENCARGA DE VERIFICAR QUE ACCION HACER Y EJECUTARLAS ***********************************/
 void fdisk::make_fdisk(fdisk *particion){
     //Validaciones
     if(particion->path == "") { cout << "[Error] > No se ingreso el parametro de $path" << endl; return;}
@@ -770,13 +839,13 @@ void fdisk::make_fdisk(fdisk *particion){
 
     //Verificamos si hay que agregar o eliminar espacio a la particion
     if(particion->agregar != 0){
-        //Agregamos o eliminamos espacion de la particion
-        //AgregarParticion(particion->path, particion->nombre, add);
+        //Agregamos o eliminamos espacio de la particion
+        update_partition(particion->nombre, particion->path, add);
         return;
     }
     if(particion->eliminar != ""){
         //Eliminamos la particion como tal
-        //EliminarParticion(particion->path, particion->nombre, particion->eliminar);
+        delete_partition(particion->nombre, particion->path, particion->eliminar);
         return;
     }
     if(particion->mov){
