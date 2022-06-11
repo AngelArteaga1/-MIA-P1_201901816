@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <vector>
+#include <algorithm>
 
 #include "../estructura/estructura.h"
 
@@ -105,6 +107,7 @@ bool exist_partition(string path, string name, MBR master){
     //Iteramos las particiones
     for (int i = 0; i < 4; ++i) {
         //Verificamos si existe el nombre en una particion primaria
+        //cout << name << " " << master.mbr_partitiones[i].part_name << endl;
         if((strcmp(name.c_str(), master.mbr_partitiones[i].part_name)) == 0){
             return true;
         }else if (master.mbr_partitiones[i].part_type == 'E'){
@@ -117,6 +120,7 @@ bool exist_partition(string path, string name, MBR master){
             int posicionFinal = master.mbr_partitiones[extendida].part_start + master.mbr_partitiones[extendida].part_size;
             //Recorremos todas las particiones logicas
             while((fread(&sub, sizeof(EBR),1, archivo)) != 0 && (ftell(archivo) < posicionFinal)){
+                //cout << "Logica: " << sub.part_name << endl; 
                 if(strcmp(sub.part_name, name.c_str()) == 0){
                     fclose(archivo);
                     return true;
@@ -195,7 +199,7 @@ void make_primaria(string name, string path, int size, char fit){
         master.mbr_partitiones[num].part_type = 'P';
         master.mbr_partitiones[num].part_fit = fit;
         //Obtenemos la posicion donde comienza la particion, si es primera o si no
-        if(num == 0) master.mbr_partitiones[num].part_start = sizeof(master); 
+        if(num == 0) master.mbr_partitiones[num].part_start = sizeof(MBR); 
         else master.mbr_partitiones[num].part_start = master.mbr_partitiones[num-1].part_start + master.mbr_partitiones[num-1].part_size;
         master.mbr_partitiones[num].part_size = size;
         master.mbr_partitiones[num].part_status = '0';
@@ -253,7 +257,7 @@ void make_extendida(string name, string path, int size, char fit){
         master.mbr_partitiones[num].part_type = 'E';
         master.mbr_partitiones[num].part_fit = fit;
         //Obtenemos la posicion donde comienza la particion, si es primera o si no
-        if(num==0) master.mbr_partitiones[num].part_start = sizeof(master);
+        if(num==0) master.mbr_partitiones[num].part_start = sizeof(MBR);
         else master.mbr_partitiones[num].part_start = master.mbr_partitiones[num-1].part_start + master.mbr_partitiones[num-1].part_size;
         master.mbr_partitiones[num].part_size = size;
         master.mbr_partitiones[num].part_status = '0';
@@ -301,8 +305,6 @@ void make_logica(string name, string path, int size, char fit){
     FILE *archivo = fopen(path.c_str(), "rb+");
     fseek(archivo, 0, SEEK_SET);
     fread(&master, sizeof(MBR), 1, archivo);
-
-    cout << "pues deberia de llegar hasta aca jajaja" << endl;
 
     //Validaciones
     //Verificamos si ya existe una particion extendida
@@ -816,13 +818,14 @@ void fdisk::make_fdisk(fdisk *particion){
     //Seteamos el tamanio de la particion y tambien el tamanio que agregaria o quitaria
     int size = 0;
     int add = 0;
-    if (particion->unidad=="K" || particion->unidad == ""){
+    transform(particion->unidad.begin(), particion->unidad.end(), particion->unidad.begin(), :: tolower);
+    if (particion->unidad == "k" || particion->unidad == ""){
         size = particion->size;
         add = particion->agregar;
-    }else if (particion->unidad == "B"){
+    }else if (particion->unidad == "b"){
         size = particion->size/1000;
         add = particion->agregar/1000;
-    }else if (particion->unidad=="M"){
+    }else if (particion->unidad == "m"){
         size = particion->size*1000;
         add = particion->agregar*1000;
     }else{
@@ -832,10 +835,12 @@ void fdisk::make_fdisk(fdisk *particion){
 
     //Seteamos el ajuste de la particion
     char fit ;
-    if (particion->ajuste == "BF") fit = 'B';
-    else if (particion->ajuste == "FF") fit = 'F';
-    else if (particion->ajuste == "WF" || particion->ajuste == "") fit = 'W';
-    else cout << "[Error] > El valor de @fit no es permitido" << endl;
+    transform(particion->ajuste.begin(), particion->ajuste.end(), particion->ajuste.begin(), :: tolower);
+    cout << particion->ajuste << endl;
+    if (particion->ajuste == "bf") fit = 'B';
+    else if (particion->ajuste == "ff") fit = 'F';
+    else if (particion->ajuste == "wf" || particion->ajuste == "") fit = 'W';
+    else {cout << "[Error] > El valor de @fit no es permitido" << endl; return;} 
 
     //Verificamos si hay que agregar o eliminar espacio a la particion
     if(particion->agregar != 0){

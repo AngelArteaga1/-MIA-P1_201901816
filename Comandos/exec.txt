@@ -1,0 +1,1 @@
+exec $path=>"/home/angel/Github/-MIA-P1_201901816/Scripts/comandos.scripts"

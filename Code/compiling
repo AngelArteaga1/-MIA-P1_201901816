@@ -4,4 +4,5 @@ c++ \
     ./mkdisk/mkdisk.cpp \
     ./rmdisk/rmdisk.cpp \
     ./fdisk/fdisk.cpp \
+    ./exec/exec.cpp \
 -o run

@@ -5,6 +5,7 @@
 #include "../mkdisk/mkdisk.h"
 #include "../rmdisk/rmdisk.h"
 #include "../fdisk/fdisk.h"
+#include "../exec/exec.h"
 
 /*Funcion para saber si la cadena es aceptada como nombre*/
 bool verify_name(string name){
@@ -141,7 +142,7 @@ void analizar_fdisk(char *parametros){
         parametros = strtok(NULL, " ");
     }
     //Imprimimos la clase de particion
-    cout << "size: " << particion->size << endl;
+    /*cout << "size: " << particion->size << endl;
     cout << "unit: " << particion->unidad << endl;
     cout << "path: " << particion->path << endl;
     cout << "type: " << particion->tipo << endl;
@@ -149,11 +150,32 @@ void analizar_fdisk(char *parametros){
     cout << "delete: " << particion->eliminar << endl;
     cout << "name: " << particion->nombre << endl;
     cout << "add: " << particion->agregar << endl;
-    cout << "mov: " << particion->mov << endl;
+    cout << "mov: " << particion->mov << endl;*/
 
     //Creamos la particion
     particion->make_fdisk(particion);
 }
+/*Funcion para anlizar los scripts, comando a comando*/
+void analizar_exec(char *parametros){
+    //Pasamos a la siguiente posicion
+    parametros = strtok(NULL, " ");
+    //Inicializamos nuestro disco
+    exec *exectutito = new exec();
+    while(parametros != NULL){
+        //Obtenemos el tipo y el valor del parametro actual (los parametros ya vienen en lowercase)
+        string tmpParam = parametros;
+        string tipo = get_tipo_parametro(tmpParam);
+        string valor = get_valor_parametro(tmpParam);
+        //Verificamos cual parametro es para inicializar el objeto
+        if(tipo == "$path"){
+            valor = delete_comillas(valor);
+            exectutito->path = valor;
+        }
+        parametros = strtok(NULL, " ");
+    }
+    //Eliminamos el disco
+    exectutito->make_exec(exectutito);
+} 
 
 /*Funcion que define que comando es el que hay que ejecutar*/
 void analizar(char *comando) {
@@ -164,6 +186,8 @@ void analizar(char *comando) {
         analizar_rmdisk(token);
     } else if (strcasecmp(token, "fdisk") == 0){
         analizar_fdisk(token);
+    } else if (strcasecmp(token, "exec") == 0){
+        analizar_exec(token);
     } else {
         cout << "Comando no aceptado :c" << endl;
     }

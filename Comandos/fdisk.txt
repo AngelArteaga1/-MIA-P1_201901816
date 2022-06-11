@@ -3,15 +3,27 @@ fdisk $sizE=>1 @tipo=>L @unit=>M @fit=>BF $path=>"/misdiscos/Disco3.dsk" $name=>
 
 //Correctos
 /*Crea una particion primaria de 72 kb*/
-fdisk $sizE=>72 $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk" $name=>Particion1
+fdisk $sizE=>30 $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk" $name=>Particion1
+
+
 /*Crea una particion extendida, de 56 kb*/
 fdisk @TyPE=>E $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk" @Unit=>K $sizE=>56 $name=>Particion2
+
+
 /*Crea una particion logica de 1 mb, deberia de tirara error por que no hay espacio*/
-fdisk $sizE=>10 @TyPE=>L @unit=>K @fit=>BF $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk" $name=>Particion5
+fdisk $sizE=>10 @TyPE=>L @unit=>m @fit=>BF $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk" $name=>Particion5
+
+
 /*Crea una particion extendida de 200 kb*/
 fdisk @tipo=>E $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk" $name=>Part3 @Unit=>K $sizE=>200
 
+/*Elimina la particion 1 que es de 72 kb*/
+fdisk @delete=>fast $name=>Particion4 $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk"
 
-fdisk @delete=>fast $name=>"Particion1" $path=>"/home/Disco1.dsk"
-fdisk $name=>"Particion1" @delete=>full $path=>"/home/Disco1.dsk"
-fdisk @add=>1 @unit=>M –path=>"/home/mis $name=>"Particion 4"
+
+/*Elimina de forma completa la particion 1 que es de 72 kb*/
+fdisk $name=>"Particion1" @delete=>full $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk"
+
+
+/*Agrega un megabyte a la particion 4 que es la de */
+fdisk @add=>12 @unit=>k $path=>"/home/user/Documentos/Disquitos/Disco_1.dsk" $name=>Particion8
