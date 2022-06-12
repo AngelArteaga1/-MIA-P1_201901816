@@ -5,4 +5,7 @@ c++ \
     ./rmdisk/rmdisk.cpp \
     ./fdisk/fdisk.cpp \
     ./exec/exec.cpp \
+    ./listadoble/listamount.cpp \
+    ./listadoble/nodomount.cpp \
+    ./unmount/unmount.cpp \
 -o run

@@ -6,6 +6,8 @@
 #include "../rmdisk/rmdisk.h"
 #include "../fdisk/fdisk.h"
 #include "../exec/exec.h"
+#include "../mount/mount.h"
+#include "../unmount/unmount.h"
 
 /*Funcion para saber si la cadena es aceptada como nombre*/
 bool verify_name(string name){
@@ -155,7 +157,7 @@ void analizar_fdisk(char *parametros){
     //Creamos la particion
     particion->make_fdisk(particion);
 }
-/*Funcion para anlizar los scripts, comando a comando*/
+/*Funcion para analizar los scripts, comando a comando*/
 void analizar_exec(char *parametros){
     //Pasamos a la siguiente posicion
     parametros = strtok(NULL, " ");
@@ -176,6 +178,53 @@ void analizar_exec(char *parametros){
     //Eliminamos el disco
     exectutito->make_exec(exectutito);
 } 
+/*Funcion para montar una particion*/
+void analizar_mount(char *parametros){
+    //Pasamos a la siguiente posicion
+    parametros = strtok(NULL, " ");
+    //Inicializamos nuestro disco
+    mount *mountsito = new mount();
+    while(parametros != NULL){
+        //Obtenemos el tipo y el valor del parametro actual (los parametros ya vienen en lowercase)
+        string tmpParam = parametros;
+        string tipo = get_tipo_parametro(tmpParam);
+        string valor = get_valor_parametro(tmpParam);
+        //Verificamos cual parametro es para inicializar el objeto
+        if(tipo == "$path"){
+            valor = delete_comillas(valor);
+            mountsito->path = valor;
+        } else if (tipo == "$name"){
+            mountsito->name = valor;
+        } 
+        parametros = strtok(NULL, " ");
+    }
+    //Eliminamos el disco
+    mountsito->make_mount(mountsito);
+} 
+/*Funcion para montar una particion*/
+void analizar_unmount(char *parametros){
+    //Pasamos a la siguiente posicion
+    parametros = strtok(NULL, " ");
+    while(parametros != NULL){
+        //Inicializamos nuestro disco
+        unmount *unmountsito = new unmount();
+        //Obtenemos el tipo y el valor del parametro actual (los parametros ya vienen en lowercase)
+        string tmpParam = parametros;
+        string tipo = get_tipo_parametro(tmpParam);
+        string valor = get_valor_parametro(tmpParam);
+        //Verificamos cual parametro es para inicializar el objeto
+        if(tipo.length() > 3){
+            if(tipo.at(0) == '$' && tipo.at(1) == 'i' && tipo.at(2) == 'd'){
+                unmountsito->id = valor;
+            }
+        }
+        //Hacemos el unmount
+        unmountsito->make_unmount(unmountsito);
+        parametros = strtok(NULL, " ");
+    }
+
+} 
+
 
 /*Funcion que define que comando es el que hay que ejecutar*/
 void analizar(char *comando) {
@@ -188,6 +237,10 @@ void analizar(char *comando) {
         analizar_fdisk(token);
     } else if (strcasecmp(token, "exec") == 0){
         analizar_exec(token);
+    } else if (strcasecmp(token, "mount") == 0){
+        analizar_mount(token);
+    } else if (strcasecmp(token, "unmount") == 0){
+        analizar_unmount(token);
     } else {
         cout << "Comando no aceptado :c" << endl;
     }

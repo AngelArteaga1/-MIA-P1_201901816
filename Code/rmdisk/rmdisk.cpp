@@ -13,7 +13,7 @@ void rmdisk::make_rmdisk(rmdisk *disco){
     //Validaciones
     FILE *file;
     const char * ruta = disco->path.c_str();
-    if (!(file = fopen(ruta, "r"))) { cout << "[Error] > No se ha encontrado el disco" << endl; return;} else {fclose(file);}
+    if (!(file = fopen(ruta, "r"))) { cout << "[Error] > No se ha encontrado el disco" << endl; fclose(file); return;} else {fclose(file);}
 
     //Eliminamos el disco
     remove(ruta);

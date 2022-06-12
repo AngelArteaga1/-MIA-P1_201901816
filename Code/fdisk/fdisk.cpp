@@ -7,102 +7,14 @@
 #include <algorithm>
 
 #include "../estructura/estructura.h"
+#include "../mount/mount.h"
 
 fdisk::fdisk(){ }
 
 
 /*******************************  ESTAS SON FUNCIONES DE AYUDA, DEVUELVEN APUNTADORES O VALORES ***********************************/
 
-int get_partition_extendida(MBR master){
-    for (int i = 0; i < 4; i++)
-        if(master.mbr_partitiones[i].part_type == 'E') return i;
-    return -1;
-}
-
-int get_memory_used_extendida(string nombre, string path){
-    FILE *archivo  = fopen(path.c_str(),"rb+");
-    MBR master;
-    fseek(archivo, 0, SEEK_SET);
-    fread(&master, sizeof(MBR), 1, archivo);
-    int num = get_partition_extendida(master);
-    int size = 0;
-    if(num != -1){
-        //Obtenemos el primer ebr de la particion extendida
-        EBR Extendida;
-        fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
-        fread(&Extendida, sizeof(EBR), 1 , archivo);
-        //Iteramos hasta encontrar a la particion logica
-        while ((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start)) {
-            size += Extendida.part_size;
-            if(Extendida.part_next == -1) return size;
-            //seguimos iterando
-            fseek(archivo, Extendida.part_next, SEEK_SET);
-            fread(&Extendida, sizeof(EBR), 1 , archivo);
-        }
-    }
-    fclose(archivo);
-    return -1;
-}
-
-int find_partition_logica(string name, string path){
-    FILE *archivo = fopen(path.c_str(),"rb+");
-    MBR master;
-    fseek(archivo, 0, SEEK_SET);
-    fread(&master, sizeof(MBR), 1, archivo);
-    int num = get_partition_extendida(master);
-    if(num != -1){
-        EBR Extendida;
-        fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
-        fread(&Extendida, sizeof(EBR), 1 , archivo);
-        //Iteramos hasta encontrar la particion logica
-        while ((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start)) {
-            if (strcmp(Extendida.part_name, name.c_str()) == 0){
-                //Retornamos la posicion exacta donde el ebr comienza
-                return (ftell(archivo) - sizeof(EBR));
-            }
-            if(Extendida.part_next == -1) break;
-            //Vamos a la siguiente posicion
-            fseek(archivo, Extendida.part_next, SEEK_SET);
-            fread(&Extendida, sizeof(EBR), 1 , archivo);
-        }
-    }
-    fclose(archivo);
-    return -1;
-}
-
-int get_partition_primaria(MBR master, string name){
-    for (int i = 0; i < 4; i++) {
-        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
-            if(master.mbr_partitiones[i].part_type != 'E'){
-                return i;
-            }
-        }
-    }
-    return -1;
-}
-
-bool is_partition_primaria(MBR master, string name){
-    for (int i = 0; i < 4; i++) {
-        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
-            if(master.mbr_partitiones[i].part_type != 'E'){
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool is_partition_extendida(MBR master, string name){
-    for (int i = 0; i < 4; i++) {
-        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
-            if(master.mbr_partitiones[i].part_type == 'E'){
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
+//Esta funcion devuelvue falso si no existe la particion, true si si existe
 bool exist_partition(string path, string name, MBR master){
     //Iteramos las particiones
     for (int i = 0; i < 4; ++i) {
@@ -134,14 +46,110 @@ bool exist_partition(string path, string name, MBR master){
     }
     return false;
 }
-
+//Esta funcion devuelve falso si existe una particion extendida dentro del disco, si no devuelve true
 bool exist_partition_extendida(MBR master){
     for (int i = 0; i < 4; i++)
         if(master.mbr_partitiones[i].part_type == 'E') return true;
     return false;
 }
 
-int get_espacio_usado(MBR master){
+
+//Esta funcion busca la particion, devuelve true si la particion es primaria
+bool is_partition_primaria(MBR master, string name){
+    for (int i = 0; i < 4; i++) {
+        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
+            if(master.mbr_partitiones[i].part_type != 'E'){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+//Esta funcion busca la particion, devuelve true si la particion es extendida
+bool is_partition_extendida(MBR master, string name){
+    for (int i = 0; i < 4; i++) {
+        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
+            if(master.mbr_partitiones[i].part_type == 'E'){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+//Esta funcion busca la particion, primaria y devuelve la posicion que esta dentro del mbr
+
+
+int get_partition_primaria(MBR master, string name){
+    for (int i = 0; i < 4; i++) {
+        if(strcmp(master.mbr_partitiones[i].part_name, name.c_str()) == 0){
+            if(master.mbr_partitiones[i].part_type != 'E'){
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+//Esta funcion busca la particion, extendida que se encuentra en el disco y devuelve la posicion dentro del mbr
+int get_partition_extendida(MBR master){
+    for (int i = 0; i < 4; i++)
+        if(master.mbr_partitiones[i].part_type == 'E') return i;
+    return -1;
+}
+//Esta funcion busca la particion dentro de las logicas, si la encuentra devuelve la posicion para leer el ebr
+int get_partition_logica(string name, string path){
+    FILE *archivo = fopen(path.c_str(),"rb+");
+    MBR master;
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
+    int num = get_partition_extendida(master);
+    if(num != -1){
+        EBR Extendida;
+        fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+        fread(&Extendida, sizeof(EBR), 1 , archivo);
+        //Iteramos hasta encontrar la particion logica
+        while ((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start)) {
+            if (strcmp(Extendida.part_name, name.c_str()) == 0){
+                //Retornamos la posicion exacta donde el ebr comienza
+                return (ftell(archivo) - sizeof(EBR));
+            }
+            if(Extendida.part_next == -1) break;
+            //Vamos a la siguiente posicion
+            fseek(archivo, Extendida.part_next, SEEK_SET);
+            fread(&Extendida, sizeof(EBR), 1 , archivo);
+        }
+    }
+    fclose(archivo);
+    return -1;
+}
+
+
+//Esta funcion devuelve el espacio usado dentro de la particion extendida
+int get_memory_used_extendida(string nombre, string path){
+    FILE *archivo  = fopen(path.c_str(),"rb+");
+    MBR master;
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
+    int num = get_partition_extendida(master);
+    int size = 0;
+    if(num != -1){
+        //Obtenemos el primer ebr de la particion extendida
+        EBR Extendida;
+        fseek(archivo, master.mbr_partitiones[num].part_start, SEEK_SET);
+        fread(&Extendida, sizeof(EBR), 1 , archivo);
+        //Iteramos hasta encontrar a la particion logica
+        while ((ftell(archivo) < master.mbr_partitiones[num].part_size + master.mbr_partitiones[num].part_start)) {
+            size += Extendida.part_size;
+            if(Extendida.part_next == -1) return size;
+            //seguimos iterando
+            fseek(archivo, Extendida.part_next, SEEK_SET);
+            fread(&Extendida, sizeof(EBR), 1 , archivo);
+        }
+    }
+    fclose(archivo);
+    return -1;
+}
+//Esta funcion devuelve el espacio usado dentro del disco, solo las particion primarias o extendidas
+int get_memory_used_mbr(MBR master){
     int espacio = 0; //Kilobyte
     for (int i = 0; i < 4; i++) {
         if (master.mbr_partitiones[i].part_status != '1'){
@@ -152,16 +160,8 @@ int get_espacio_usado(MBR master){
     return espacio;
 }
 
-bool is_posible_write_partition(MBR master, int size){
-    for (int i = 0; i < 4; i++) {
-        //Verificamos si tenemos un espacio libre
-        if(master.mbr_partitiones[i].part_start == -1) return true;
-        //Verificamos si existe un espacio donde hubo una particion anteriormente y cabe en este espacion
-        if(master.mbr_partitiones[i].part_status == '1' && master.mbr_partitiones[i].part_size >= size) return true;
-    }
-    return false;
-}
 
+//Esta funcion busca la posicion libre dentro del mbr para poder escribir una particion
 int get_num_partition_free(MBR master, int size){
     for (int i = 0; i < 4; i++) {
         //Verificamos si tenemos un espacio libre
@@ -170,6 +170,16 @@ int get_num_partition_free(MBR master, int size){
         if(master.mbr_partitiones[i].part_status == '1' && master.mbr_partitiones[i].part_size >= size) return i;
     }
     return -1;
+}
+//Esta funcion busca si es posible escribir una particion primaria o extensa dentro del disco
+bool is_posible_write_partition(MBR master, int size){
+    for (int i = 0; i < 4; i++) {
+        //Verificamos si tenemos un espacio libre
+        if(master.mbr_partitiones[i].part_start == -1) return true;
+        //Verificamos si existe un espacio donde hubo una particion anteriormente y cabe en este espacion
+        if(master.mbr_partitiones[i].part_status == '1' && master.mbr_partitiones[i].part_size >= size) return true;
+    }
+    return false;
 }
 
 
@@ -188,7 +198,7 @@ void make_primaria(string name, string path, int size, char fit){
         //Obtenemos la posicion de la particion libre
         int num = get_num_partition_free(master, size);
         //Obtenemos el espacio que hemos usado en el disco
-        int EspacioUse = get_espacio_usado(master);
+        int EspacioUse = get_memory_used_mbr(master);
 
         //VALIDACIONES
         //Verificamos si si podemos usar el espacio
@@ -245,7 +255,7 @@ void make_extendida(string name, string path, int size, char fit){
         //Obtenemos la posicion de la particion libre
         int num = get_num_partition_free(master, size);
         //Obtenemos el espacio que hemos usado en el disco
-        int EspacioUse = get_espacio_usado(master);
+        int EspacioUse = get_memory_used_mbr(master);
 
         //VALIDACIONES
         //Verificamos si si podemos usar el espacio
@@ -405,8 +415,8 @@ void update_partition(string name, string path, int size){
     fread(&master, sizeof(MBR),1 , archivo);
 
     //Validaciones
-    bool montado = false;
-    if(montado) { cout << "[Error] > No se puede actualizar una particion montada" << endl; fclose(archivo); return; }
+    //Aqui estamos validando que la particion no se encuentre montada
+    if(find_partition_in_mount(name, path)) { cout << "[Error] > No se puede actualizar una particion montada" << endl; fclose(archivo); return; }
     if(size == 0) { cout << "[Error] > El tamaño para actualizar la particion es invalido" << endl; fclose(archivo); return; }
     if(!exist_partition(path, name, master)) { cout << "[Error] > No existe una particion con ese nombre" << endl; fclose(archivo); return; }
 
@@ -612,7 +622,7 @@ void update_partition(string name, string path, int size){
     else {
         //Actualizamos espacio dentro de la particion logica
         int num = get_partition_extendida(master);
-        int start_logica = find_partition_logica(name, path);
+        int start_logica = get_partition_logica(name, path);
         int memoria_usada = get_memory_used_extendida(name, path);
         if(start_logica != -1){
             if (agregar){
@@ -675,8 +685,7 @@ void delete_partition(string name, string path, string type){
     fread(&master, sizeof(MBR), 1, archivo);
 
     //Validaciones
-    bool montado = false;
-    if(montado) { cout << "[Error] > No se puede eliminar una particion montada" << endl; fclose(archivo); return; }
+    if(find_partition_in_mount(name, path)) { cout << "[Error] > No se puede eliminar una particion montada" << endl; fclose(archivo); return; }
     if(!exist_partition(path, name, master)) { cout << "[Error] > No existe una particion con ese nombre" << endl; fclose(archivo); return; }
 
     //  SI LA PARTICION ES PRIMARIA
@@ -813,7 +822,7 @@ void fdisk::make_fdisk(fdisk *particion){
     
     FILE *file;
     const char * ruta = particion->path.c_str();
-    if (!(file = fopen(ruta, "r"))) { cout << "[Error] > No se ha encontrado el disco" << endl; return;} else {fclose(file);}
+    if (!(file = fopen(ruta, "r"))) { cout << "[Error] > No se ha encontrado el disco" << endl; fclose(file); return;} else {fclose(file);}
 
     //Seteamos el tamanio de la particion y tambien el tamanio que agregaria o quitaria
     int size = 0;
@@ -836,7 +845,6 @@ void fdisk::make_fdisk(fdisk *particion){
     //Seteamos el ajuste de la particion
     char fit ;
     transform(particion->ajuste.begin(), particion->ajuste.end(), particion->ajuste.begin(), :: tolower);
-    cout << particion->ajuste << endl;
     if (particion->ajuste == "bf") fit = 'B';
     else if (particion->ajuste == "ff") fit = 'F';
     else if (particion->ajuste == "wf" || particion->ajuste == "") fit = 'W';

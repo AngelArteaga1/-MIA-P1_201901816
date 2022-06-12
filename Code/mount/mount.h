@@ -3,10 +3,10 @@
 
 #include "string"
 #include <iostream>
-#include "listamount.h"
 using namespace std;
 
-
+//Funcion para encontrar una posible particion en la lista de montadas
+bool find_partition_in_mount(string name, string path);
 class mount
 {
 public:
