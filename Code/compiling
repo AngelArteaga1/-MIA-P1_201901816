@@ -8,4 +8,5 @@ c++ \
     ./listadoble/listamount.cpp \
     ./listadoble/nodomount.cpp \
     ./unmount/unmount.cpp \
+    ./mkfs/mkfs.cpp \
 -o run

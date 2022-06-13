@@ -23,7 +23,28 @@ bool find_partition_in_mount(string name, string path){
     }
     return false;
 }
-
+//Busca la particion con el mismo id y devuelve el treu en caso de que lo encuentre
+bool find_partition_in_mount(string id){
+    nodoMount *tmp =listita->primero;
+    while (tmp != nullptr) {
+        if (tmp->id == id){
+            return true;
+        }
+        tmp = tmp->sig;
+    }
+    return false;
+}
+//Busca la particion con el mismo id y devuelve el nombre en caso de que lo encuentre
+nodoMount* get_partition_in_mount(string id){
+    nodoMount *tmp =listita->primero;
+    while (tmp != nullptr) {
+        if (tmp->id == id){
+            return tmp;
+        }
+        tmp = tmp->sig;
+    }
+    return nullptr;
+}
 
 //Esta funcion devuelve el caracter correspondiente dependiendo del disco de los datos que se encuentran en la lista
 int get_numero(listaMount *list, string name, string path){

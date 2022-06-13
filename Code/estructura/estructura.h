@@ -40,13 +40,13 @@ typedef struct{
     int s_free_blocks_count;
     int s_free_inodes_count;
     time_t s_mtime;
-    time_t s_unmtime;
+    time_t s_umtime;
     int s_mnt_count;
     int s_magic;
     int s_inode_size;
     int s_block_size;
-    int s_firts_ino;
-    int s_firts_blo;
+    int s_first_ino;
+    int s_first_blo;
     int s_bm_inode_start;
     int s_bm_block_start;
     int s_inode_start;
@@ -54,43 +54,42 @@ typedef struct{
 }SuperBloque;
 
 typedef struct{
-    SuperBloque reserva[100];
+    char journal_tipo_operacion[14];
+    char journal_tipo;
+    char journal_nombre[14];
+    char journal_contenido;
+    time_t journal_fecha;
+    char journal_propietario[14];
+    char journal_permisos;
 }Journaling;
 
 typedef struct{
-    int i_gid;
     int i_uid;
+    int i_gid;
     int i_size;
     time_t i_atime;
     time_t i_ctime;
     time_t i_mtime;
     int i_block[15];
     char i_type;
-    int i_perm;
 }TablaInodo;
 
 typedef struct{
     char b_name[12];
     int b_inodo;
-}content;
+}Content;
 
 typedef struct{
-    content b_content[4];
+    Content b_content[4];
 }BloqueCarpeta;
-
-typedef struct{
-    char b_content[64];
-}BloqueArchivo;
 
 typedef struct{
     int b_pointers[16];
 }BloqueApuntador;
 
 typedef struct{
-    int id_user;
-    int start_super;
-    string grupo;
-    string path;
-}InicioSession;
+    char b_name[14];
+    char b_content[50];
+}BloqueArchivo;
 
 #endif // PARTICION_H

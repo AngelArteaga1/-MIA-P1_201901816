@@ -1,0 +1,2 @@
+MkfS $id=>vda1 @type=>fast 
+MkfS $id=>vda1 @add=>30 @unit=>k
