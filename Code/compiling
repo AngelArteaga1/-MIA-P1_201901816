@@ -9,4 +9,5 @@ c++ \
     ./listadoble/nodomount.cpp \
     ./unmount/unmount.cpp \
     ./mkfs/mkfs.cpp \
+    ./mkfile/mkfile.cpp \
 -o run

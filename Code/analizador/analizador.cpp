@@ -9,6 +9,7 @@
 #include "../mount/mount.h"
 #include "../unmount/unmount.h"
 #include "../mkfs/mkfs.h"
+#include "../mkfile/mkfile.h"
 
 /*Funcion para saber si la cadena es aceptada como nombre*/
 bool verify_name(string name){
@@ -251,6 +252,38 @@ void analizar_mkfs(char *parametros){
     //Creamos la particion
     mkfsito->make_mkfs(mkfsito);
 }
+/*Funcion para analizar el comando de mkfile*/
+void analizar_mkfile(char *parametros){
+    cout << "Deberia de venir aca" << endl;
+    //Pasamos a la siguiente posicion
+    parametros = strtok(NULL, " ");
+    //Inicializamos nuestro disco
+    mkfile *mkfilesito = new mkfile();
+    while(parametros != NULL){
+        //Obtenemos el tipo y el valor del parametro actual
+        string tmpParam = parametros;
+        string tipo = get_tipo_parametro(tmpParam);
+        string valor = get_valor_parametro(tmpParam);
+        //Verificamos cual parametro es para inicializar el objeto (los parametros ya vienen en lowercase)
+        if(tipo == "$id"){
+            mkfilesito->id = valor;
+        } else if (tipo == "$path"){
+            valor = delete_comillas(valor);
+            mkfilesito->path = valor;
+        } else if (tipo == "@p"){
+            mkfilesito->p = true;
+        } else if (tipo == "@size"){
+            mkfilesito->size = stoi(valor);
+        } else if (tipo == "@cont"){
+            valor = delete_comillas(valor);
+            mkfilesito->cont = valor;
+        }
+        parametros = strtok(NULL, " ");
+    }
+    //Creamos la particion
+    mkfilesito->make_mkfile(mkfilesito);
+}
+
 
 /*Funcion que define que comando es el que hay que ejecutar*/
 void analizar(char *comando) {
@@ -269,6 +302,8 @@ void analizar(char *comando) {
         analizar_unmount(token);
     } else if (strcasecmp(token, "mkfs") == 0){
         analizar_mkfs(token);
+    } else if (strcasecmp(token, "mkfile") == 0){
+        analizar_mkfile(token);
     } else {
         cout << "Comando no aceptado :c" << endl;
     }

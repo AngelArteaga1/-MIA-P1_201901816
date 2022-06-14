@@ -38,8 +38,8 @@ void make_ext(int start, int size, string path, string type){
     bloquesito.s_bm_block_start = bloquesito.s_bm_inode_start + numero_estructuras;
     bloquesito.s_inode_start = bloquesito.s_bm_block_start + (3 * numero_estructuras);
     bloquesito.s_block_start = bloquesito.s_bm_inode_start + (numero_estructuras * sizeof(TablaInodo));
-    bloquesito.s_first_ino = 1;
-    bloquesito.s_first_blo = 1;
+    bloquesito.s_first_ino = 2;
+    bloquesito.s_first_blo = 2;
 
     //Escribimos el superbloque en la posicion inicial
     FILE *file = fopen(path.c_str(),"rb+");
@@ -54,6 +54,7 @@ void make_ext(int start, int size, string path, string type){
 
     //Ahora escribimos el bitmap de inodos
     char empty = '0';
+    char full = '1';
     fseek(file, bloquesito.s_bm_inode_start, SEEK_SET);
     for (int i = 0; i < bloquesito.s_inodes_count; i++){
         fwrite(&empty, sizeof(char), 1, file);
@@ -62,6 +63,7 @@ void make_ext(int start, int size, string path, string type){
     //Ahora escribimos el bitmap de bloques
     fseek(file, bloquesito.s_bm_block_start, SEEK_SET);
     for (int i = 0; i < bloquesito.s_block_count; i++){
+        if(i == 0) fwrite(&full, sizeof(char), 1, file); //Esto es por el bloque root
         fwrite(&empty, sizeof(char), 1, file);
     }
 
@@ -69,6 +71,7 @@ void make_ext(int start, int size, string path, string type){
     TablaInodo inodo;
     fseek(file, bloquesito.s_inode_start, SEEK_SET);
     for (int i = 0; i < bloquesito.s_inodes_count; i++) {
+        if(i == 0) fwrite(&full, sizeof(char), 1, file); //Esto es por el inodo roo
         fwrite(&inode, sizeof(TablaInodo), 1, file);
     }
 
@@ -99,14 +102,22 @@ void make_ext(int start, int size, string path, string type){
     for(int i = 0; i < 15; i++)
         inode.i_block[i] = -1;
     inode.i_type = '0';
+    //Ingresamos la posicion del bloque de la carpeta raiz
+    inode.i_block[0] = bloquesito.s_block_start;
 
     //Ahora tenemos que escribir el nuevo bloque dentro de la particion
+    fseek(file, bloquesito.s_block_start, SEEK_SET);
+    fwrite(&carpetita, sizeof(BloqueCarpeta), 1, file);
 
     //Luego tenemos que escribir el inodo dentro de la particion
-
-    //Por ultimo actualizamos el superbloque si es que no lo hacemos antes
+    fseek(file, bloquesito.s_inode_start, SEEK_SET);
+    fwrite(&inode, sizeof(TablaInodo), 1, file);
 
     //Mostramos mensaje de success
+    cout << "[SUCCESS] > Se le dio formato a la particion" << endl;
+
+    //Cerramos el file
+    fclose(file);
 }
 
 
