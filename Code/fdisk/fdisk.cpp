@@ -118,7 +118,37 @@ int get_partition_size(string path, string name, MBR master){
     }
     return -1;
 }
-
+//Esta funcion devuelvue el ajuste donde empieza la particion
+char get_partition_fit(string path, string name, MBR master){
+    //Iteramos las particiones
+    for (int i = 0; i < 4; ++i) {
+        //Verificamos si existe el nombre en una particion primaria
+        if((strcmp(name.c_str(), master.mbr_partitiones[i].part_name)) == 0){
+            return master.mbr_partitiones[i].part_fit;
+        }else if (master.mbr_partitiones[i].part_type == 'E'){
+            //Verificamos si la particion no existe en una particion logica
+            EBR sub;
+            int extendida = i;
+            FILE *archivo = fopen(path.c_str(), "rb+");
+            //Ponemos el puntero al inicio de la particion extendida
+            fseek(archivo,master.mbr_partitiones[extendida].part_start, SEEK_SET);
+            int posicionFinal = master.mbr_partitiones[extendida].part_start + master.mbr_partitiones[extendida].part_size;
+            //Recorremos todas las particiones logicas
+            while((fread(&sub, sizeof(EBR),1, archivo)) != 0 && (ftell(archivo) < posicionFinal)){
+                //cout << "Logica: " << sub.part_name << endl; 
+                if(strcmp(sub.part_name, name.c_str()) == 0){
+                    fclose(archivo);
+                    return sub.part_fit;
+                }
+                if(sub.part_next == -1){
+                    break;
+                }
+            }
+            fclose(archivo);
+        }
+    }
+    return ' ';
+}
 
 
 //Esta funcion busca la particion, devuelve true si la particion es primaria

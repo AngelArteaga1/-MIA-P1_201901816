@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 mkfs::mkfs(){ }
 
 void make_ext(int start, int size, string path, string type){
@@ -57,6 +56,7 @@ void make_ext(int start, int size, string path, string type){
     char full = '1';
     fseek(file, bloquesito.s_bm_inode_start, SEEK_SET);
     for (int i = 0; i < bloquesito.s_inodes_count; i++){
+        if(i == 0) fwrite(&full, sizeof(char), 1, file); //Esto es por el inodo root
         fwrite(&empty, sizeof(char), 1, file);
     }
 
@@ -71,7 +71,6 @@ void make_ext(int start, int size, string path, string type){
     TablaInodo inodo;
     fseek(file, bloquesito.s_inode_start, SEEK_SET);
     for (int i = 0; i < bloquesito.s_inodes_count; i++) {
-        if(i == 0) fwrite(&full, sizeof(char), 1, file); //Esto es por el inodo roo
         fwrite(&inode, sizeof(TablaInodo), 1, file);
     }
 

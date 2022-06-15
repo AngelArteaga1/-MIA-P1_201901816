@@ -12,6 +12,7 @@ bool is_partition_primaria(MBR master, string name);
 bool is_partition_extendida(MBR master, string name);
 int get_partition_start(string path, string name, MBR master);
 int get_partition_size(string path, string name, MBR master);
+char get_partition_fit(string path, string name, MBR master);
 int get_partition_primaria(MBR master, string name);
 int get_partition_extendida(MBR master);
 int get_partition_logica(string name, string path);
