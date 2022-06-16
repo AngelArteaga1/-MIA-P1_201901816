@@ -2,4 +2,4 @@ Mkdisk $size=>96 $path=>"/home/angel/Documentos/Disquitos/" $name=>Disco_1.dsk
 fdisk $sizE=>15 @unit=>M $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
 mount $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
 MkfS $id=>vda1 @type=>fast
-mkFile $SIZE=>15 $id=>vda1 $PatH=>"/home/user/docs/a.txt" 
+mkFile $SIZE=>15 $id=>vda1 $PatH=>"/home/user/docs/a.txt" @p
