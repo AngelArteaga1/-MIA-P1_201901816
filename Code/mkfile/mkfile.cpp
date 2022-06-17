@@ -93,9 +93,12 @@ int first_fit(int count, int bm_start, int size, string path){
 
     //Iteramos el bitmap
     fseek(archivo, bm_start, SEEK_SET);
+    cout << "************IMPRIMIRMOS EL BITMAT************" << endl;
+    cout << "con size de: " << size << endl;
     for(int i = 0; i < count; i++){
         //Primero leemos el estado del bloque o inodo actual
         fread(&status, sizeof(char), 1, archivo);
+        cout << status << " ";
         //Primero verificamos si no se ha encontrado espacio anteriormente
         if(!espacioEncontrado){
             //Esto quiere decir que no hemos encontrado espacio aun
@@ -117,6 +120,7 @@ int first_fit(int count, int bm_start, int size, string path){
         if(contador >= size) //Esto quiere decir que si hay espacio 
             break;
     }
+    cout << endl;
     //Realizamos el ultimo filtro
     if(contador < size) posicionInicial = -1;
 
@@ -649,7 +653,7 @@ int exist_name_in_inode(TablaInodo inodo, char * token, string path){
 
 
 //Esta funcion busca el directorio dentro del sistema de archivos, si lo encuentra devuelve true, si no false
-bool search_path(char * token, int inodo_start, string path, int count_token, int total_token){
+int search_path(char * token, int inodo_start, string path, int count_token, int total_token){
 
     //Primero verificamos si el token siguiente es nulo, si si, significa que si existe la carpeta
     //cout << "************************ BUSCAMOS LA CARPETA *****************************" << endl;
@@ -675,6 +679,280 @@ bool search_path(char * token, int inodo_start, string path, int count_token, in
 
     //Si no encontro el archivo, devolvemos falso y cerramos el archivo
     fclose(archivo);
+    return -1;
+}
+
+//Esta funcion se encarga de agregar un bloque a un inodo
+bool set_inodo_to_inodo(int inodo_start, int nuevo_inodo, SuperBloque bloquesito, char * token, char fit, string path){
+    /************************** AHORA TENEMOS QUE ACTUALIZAR EL INODO ACTUAL **************************/
+    //Primero debemos de buscar si existe un bloque de carpeta libre, de ser asi, tenemos que ingresar
+    //en unos de sus hijos, el puntero a la nueva carpeta, si no, debemos de crear uno nosotros
+    //Primero obtenemos el inodo
+    TablaInodo inodo;
+    FILE *archivo = fopen(path.c_str(), "rb+");
+    fseek(archivo, inodo_start, SEEK_SET);
+    fread(&inodo, sizeof(TablaInodo), 1, archivo);
+
+    for(int i = 0; i < 15; i++){
+        if(i == 12){
+            //Simple apuntador indirecto
+            if(inodo.i_block[i] != -1){
+                //Obtenemos el bloque de apuntadores
+                BloqueApuntador apuntadores;
+                fseek(archivo, inodo.i_block[i], SEEK_SET);
+                fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                for(int j = 0; j < 16; j++){
+                    if(apuntadores.b_pointers[j] != -1){
+                        //apuntadores.b_pointers[j] tiene el apuntador a un bloque
+                        if(update_block_to_new_inode(apuntadores.b_pointers[j], path, token, nuevo_inodo)){
+                            fclose(archivo);
+                            return true;
+                        } 
+                    } else {
+                        //Esto quiere decir que tenemos que crear una nuevo bloque
+                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                        if(apuntador_nuevo_bloque == -1){
+                            cout << "[Error] > No hubo suficiente espacio para escribir un bloque" << endl;
+                            fclose(archivo);
+                            return false;
+                        }
+                        apuntadores.b_pointers[j] = make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                        //Ahora enlazamos el nuevo bloque al inodo que acabamos de crear
+                        update_block_to_new_inode(inodo.i_block[i], path, token, nuevo_inodo);
+                        //Actualizamos el bloque de apuntadores
+                        fseek(archivo, inodo.i_block[i], SEEK_SET);
+                        fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                        fclose(archivo);
+                        return true;
+                    }
+                }
+            } else {
+                //Tenemos que ingresar un bloque indirecto que apunte a un bloque de carpeta que apunte al nuevo inodo
+                //Primero creamos el bloque nuevo
+                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                
+                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
+
+                //Actualizamos el apuntador
+                inodo.i_block[i] = apuntador_nuevo_bloque_apuntador;
+                fseek(archivo, inodo_start, SEEK_SET);
+                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
+                return true;
+            }
+        } else if (i == 13){
+            //Doble apuntador indirecto
+            if(inodo.i_block[i] != -1){
+                //Obtenemos el bloque de apuntadores doble
+                BloqueApuntador apuntadoresDobles;
+                fseek(archivo, inodo.i_block[i], SEEK_SET);
+                fread(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
+                for(int j = 0; j < 16; j++){
+                    if(apuntadoresDobles.b_pointers[j] != -1){
+                        //Obtenemos el bloque de apuntadores
+                        BloqueApuntador apuntadores;
+                        fseek(archivo, apuntadoresDobles.b_pointers[j], SEEK_SET);
+                        fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                        for(int k = 0; k < 16; k++){
+                            if(apuntadores.b_pointers[k] != -1){
+                                //apuntadores.b_pointers[j] tiene el apuntador a un bloque
+                                if(update_block_to_new_inode(apuntadores.b_pointers[k], path, token, nuevo_inodo)){
+                                    fclose(archivo);
+                                    return true;
+                                }
+                            } else {
+                                //Significa que tenemos que crear un bloque y sobre ese, enlazar el nuevo inodo
+                                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                                apuntadores.b_pointers[k] = make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                                //Ahora enlazamos el nuevo bloque al inodo que acabamos de crear
+                                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                                //Actualizamos el apuntador
+                                fseek(archivo, apuntadoresDobles.b_pointers[j], SEEK_SET);
+                                fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                                fclose(archivo);
+                                return true;
+                            }
+                        }
+                    }else{
+                        //Significa que tenemos que crear un bloque y sobre ese, enlazar el nuevo inodo
+                        //Primero creamos el bloque nuevo
+                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                        make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                        update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                        
+                        //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                        int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                        make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
+
+                        //Actualizamos el apuntador
+                        apuntadoresDobles.b_pointers[j] = apuntador_nuevo_bloque_apuntador;
+                        fseek(archivo, inodo.i_block[i], SEEK_SET);
+                        fwrite(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
+                        fclose(archivo);
+                        return true;
+                    }
+                }
+            } else {
+                //Tenemos que meter un bloque de apuntadores que apunte a otro bloque de apuntadores 
+                //que apunte un bloque de carpeta que apunte al nuevo inodo
+                //Primero creamos el bloque nuevo
+                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                
+                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
+
+                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                int apuntador_nuevo_bloque_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador, apuntador_nuevo_bloque_apuntador, path);
+
+                //Actualizamos el apuntador
+                inodo.i_block[i] = apuntador_nuevo_bloque_apuntador_apuntador;
+                fseek(archivo, inodo_start, SEEK_SET);
+                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
+                fclose(archivo);
+                return true;
+            }
+        } else if (i == 14){
+            //Triple apuntador indirecto
+            if(inodo.i_block[i] != -1){
+                //Obtenemos el bloque de apuntadores doble
+                BloqueApuntador apuntadoresTriples;
+                fseek(archivo, inodo.i_block[i], SEEK_SET);
+                fread(&apuntadoresTriples, sizeof(BloqueApuntador), 1, archivo);
+                for(int j = 0; j < 16; j++){
+                    if(apuntadoresTriples.b_pointers[j] != -1){
+                        //Obtenemos el bloque de apuntadores
+                        BloqueApuntador apuntadoresDobles;
+                        fseek(archivo, apuntadoresTriples.b_pointers[j], SEEK_SET);
+                        fread(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
+                        for(int k = 0; k < 16; k++){
+                            if(apuntadoresDobles.b_pointers[k] != -1){
+                                //Obtenemos el bloque de apuntadores
+                                BloqueApuntador apuntadores;
+                                fseek(archivo, apuntadoresDobles.b_pointers[k], SEEK_SET);
+                                fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                                for(int m = 0; m < 16; m++){
+                                    if(apuntadores.b_pointers[m] != -1){
+                                        //apuntadores.b_pointers[j] tiene el apuntador a un bloque
+                                        if(update_block_to_new_inode(apuntadores.b_pointers[m], path, token, nuevo_inodo)){
+                                            fclose(archivo);
+                                            return true;
+                                        }
+                                    } else {
+                                        //tenemos que crear el bloque y asignarlo al apuntador
+                                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                                        apuntadores.b_pointers[m] = make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                                        //Ahora enlazamos el nuevo bloque al inodo que acabamos de crear
+                                        update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                                        //Actualizamos el apuntador
+                                        fseek(archivo, apuntadoresDobles.b_pointers[k], SEEK_SET);
+                                        fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                                        fclose(archivo);
+                                        return true;
+                                    }
+                                }
+                            } else {
+                                //Tenemos que crear el bloque, crear un apuntador y asignarlo al apuntador
+                                //Primero creamos el bloque nuevo
+                                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                                
+                                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
+
+                                //Actualizamos el apuntador
+                                apuntadoresDobles.b_pointers[k] = apuntador_nuevo_bloque_apuntador;
+                                fseek(archivo, apuntadoresTriples.b_pointers[j], SEEK_SET);
+                                fwrite(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
+
+                                fclose(archivo);
+                                return true;
+                            }
+                        }
+                    } else {
+                        //Tenemos que crear un bloque, crear un apuntador, crear una puntador y asignarlo al apuntador
+                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                        make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                        update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                        
+                        //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                        int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                        make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
+
+                        //Ahora creamos el bloque de apuntadores apuntando a el bloque de apuntadores anterior
+                        int apuntador_nuevo_bloque_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                        make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador, apuntador_nuevo_bloque_apuntador, path);
+
+                        //Actualizamos el apuntador
+                        apuntadoresTriples.b_pointers[j] = apuntador_nuevo_bloque_apuntador_apuntador;
+                        fseek(archivo, inodo.i_block[i], SEEK_SET);
+                        fwrite(&apuntadoresTriples, sizeof(BloqueApuntador), 1, archivo);
+
+                        fclose(archivo);
+                        return true;
+                    }
+                }
+            } else {
+                //Tenemos que meter un bloque de apuntadores que apunte a otro bloque de apuntadores 
+                //que apunte a otro bloque de apuntadores que apunte a un bloque de carpeta que apunte al nuevo inodo
+                //Primero creamos el bloque nuevo
+                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
+                
+                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
+
+                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                int apuntador_nuevo_bloque_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador, apuntador_nuevo_bloque_apuntador, path);
+
+                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
+                int apuntador_nuevo_bloque_apuntador_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
+                make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador_apuntador, apuntador_nuevo_bloque_apuntador_apuntador, path);
+
+                //Actualizamos el apuntador
+                inodo.i_block[i] = apuntador_nuevo_bloque_apuntador_apuntador_apuntador;
+                fseek(archivo, inodo_start, SEEK_SET);
+                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
+
+                fclose(archivo);
+                return true;
+            }
+        } else {
+            //Apuntador indirecto
+            if(inodo.i_block[i] != -1){
+                //apuntadores.b_pointers[j] tiene el apuntador a un bloque
+                if(update_block_to_new_inode(inodo.i_block[i], path, token, nuevo_inodo)){
+                    fclose(archivo);
+                    return true;
+                }
+            } else {
+                //Esto quiere decir que tenemos que crear un nuevo bloque
+                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
+                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
+                update_block_to_new_inode(inodo.i_block[i], path, token, nuevo_inodo);
+
+                //Actualizamos el inodo
+                inodo.i_block[i] = apuntador_nuevo_bloque;
+                fseek(archivo, inodo_start, SEEK_SET);
+                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
+
+                fclose(archivo);
+                return true;
+            }
+        }
+    }
+    //Si llegamos hasta aca es porque no hubo espacio dentro del inodo :c
     return false;
 }
 
@@ -721,257 +999,16 @@ int make_path(char * token, int inodo_start, string path, SuperBloque bloquesito
     //Creamos el inodo que tendra de apuntador a la carpeta
     make_new_inode(inodito_start, carpetita_start, '0', path);
 
-    /************************** AHORA TENEMOS QUE ACTUALIZAR EL INODO ACTUAL **************************/
-    //Primero debemos de buscar si existe un bloque de carpeta libre, de ser asi, tenemos que ingresar
-    //en unos de sus hijos, el puntero a la nueva carpeta, si no, debemos de crear uno nosotros
-    for(int i = 0; i < 15; i++){
-        if(i == 12){
-            //Simple apuntador indirecto
-            if(inodo.i_block[i] != -1){
-                //Obtenemos el bloque de apuntadores
-                BloqueApuntador apuntadores;
-                fseek(archivo, inodo.i_block[i], SEEK_SET);
-                fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                for(int j = 0; j < 16; j++){
-                    if(apuntadores.b_pointers[j] != -1){
-                        //apuntadores.b_pointers[j] tiene el apuntador a un bloque
-                        if(update_block_to_new_inode(apuntadores.b_pointers[j], path, token, inodito_start)) goto SiguienteCarpeta;
-                    } else {
-                        //Esto quiere decir que tenemos que crear una nuevo bloque
-                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                        if(apuntador_nuevo_bloque == -1){
-                            cout << "[Error] > No hubo suficiente espacio para escribir un bloque" << endl;
-                            fclose(archivo);
-                            return -1;
-                        }
-                        apuntadores.b_pointers[j] = make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                        //Ahora enlazamos el nuevo bloque al inodo que acabamos de crear
-                        update_block_to_new_inode(inodo.i_block[i], path, token, inodito_start);
-                        //Actualizamos el bloque de apuntadores
-                        fseek(archivo, inodo.i_block[i], SEEK_SET);
-                        fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                        goto SiguienteCarpeta;
-                    }
-                }
-            } else {
-                //Tenemos que ingresar un bloque indirecto que apunte a un bloque de carpeta que apunte al nuevo inodo
-                //Primero creamos el bloque nuevo
-                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                
-                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
-
-                //Actualizamos el apuntador
-                inodo.i_block[i] = apuntador_nuevo_bloque_apuntador;
-                fseek(archivo, inodo_start, SEEK_SET);
-                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
-                goto SiguienteCarpeta;
-            }
-        } else if (i == 13){
-            //Doble apuntador indirecto
-            if(inodo.i_block[i] != -1){
-                //Obtenemos el bloque de apuntadores doble
-                BloqueApuntador apuntadoresDobles;
-                fseek(archivo, inodo.i_block[i], SEEK_SET);
-                fread(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
-                for(int j = 0; j < 16; j++){
-                    if(apuntadoresDobles.b_pointers[j] != -1){
-                        //Obtenemos el bloque de apuntadores
-                        BloqueApuntador apuntadores;
-                        fseek(archivo, apuntadoresDobles.b_pointers[j], SEEK_SET);
-                        fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                        for(int k = 0; k < 16; k++){
-                            if(apuntadores.b_pointers[k] != -1){
-                                //apuntadores.b_pointers[j] tiene el apuntador a un bloque
-                                if(update_block_to_new_inode(apuntadores.b_pointers[k], path, token, inodito_start)) goto SiguienteCarpeta;
-                            } else {
-                                //Significa que tenemos que crear un bloque y sobre ese, enlazar el nuevo inodo
-                                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                                apuntadores.b_pointers[k] = make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                                //Ahora enlazamos el nuevo bloque al inodo que acabamos de crear
-                                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                                //Actualizamos el apuntador
-                                fseek(archivo, apuntadoresDobles.b_pointers[j], SEEK_SET);
-                                fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                goto SiguienteCarpeta;
-                            }
-                        }
-                    }else{
-                        //Significa que tenemos que crear un bloque y sobre ese, enlazar el nuevo inodo
-                        //Primero creamos el bloque nuevo
-                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                        make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                        update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                        
-                        //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                        int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                        make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
-
-                        //Actualizamos el apuntador
-                        apuntadoresDobles.b_pointers[j] = apuntador_nuevo_bloque_apuntador;
-                        fseek(archivo, inodo.i_block[i], SEEK_SET);
-                        fwrite(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
-                        goto SiguienteCarpeta;
-                    }
-                }
-            } else {
-                //Tenemos que meter un bloque de apuntadores que apunte a otro bloque de apuntadores 
-                //que apunte un bloque de carpeta que apunte al nuevo inodo
-                //Primero creamos el bloque nuevo
-                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                
-                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
-
-                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                int apuntador_nuevo_bloque_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador, apuntador_nuevo_bloque_apuntador, path);
-
-                //Actualizamos el apuntador
-                inodo.i_block[i] = apuntador_nuevo_bloque_apuntador_apuntador;
-                fseek(archivo, inodo_start, SEEK_SET);
-                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
-                goto SiguienteCarpeta;
-            }
-        } else if (i == 14){
-            //Triple apuntador indirecto
-            if(inodo.i_block[i] != -1){
-                //Obtenemos el bloque de apuntadores doble
-                BloqueApuntador apuntadoresTriples;
-                fseek(archivo, inodo.i_block[i], SEEK_SET);
-                fread(&apuntadoresTriples, sizeof(BloqueApuntador), 1, archivo);
-                for(int j = 0; j < 16; j++){
-                    if(apuntadoresTriples.b_pointers[j] != -1){
-                        //Obtenemos el bloque de apuntadores
-                        BloqueApuntador apuntadoresDobles;
-                        fseek(archivo, apuntadoresTriples.b_pointers[j], SEEK_SET);
-                        fread(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
-                        for(int k = 0; k < 16; k++){
-                            if(apuntadoresDobles.b_pointers[k] != -1){
-                                //Obtenemos el bloque de apuntadores
-                                BloqueApuntador apuntadores;
-                                fseek(archivo, apuntadoresDobles.b_pointers[k], SEEK_SET);
-                                fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                for(int m = 0; m < 16; m++){
-                                    if(apuntadores.b_pointers[m] != -1){
-                                        //apuntadores.b_pointers[j] tiene el apuntador a un bloque
-                                        if(update_block_to_new_inode(apuntadores.b_pointers[m], path, token, inodito_start)) goto SiguienteCarpeta;
-                                    } else {
-                                        //tenemos que crear el bloque y asignarlo al apuntador
-                                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                                        apuntadores.b_pointers[m] = make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                                        //Ahora enlazamos el nuevo bloque al inodo que acabamos de crear
-                                        update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                                        //Actualizamos el apuntador
-                                        fseek(archivo, apuntadoresDobles.b_pointers[k], SEEK_SET);
-                                        fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                        goto SiguienteCarpeta;
-                                    }
-                                }
-                            } else {
-                                //Tenemos que crear el bloque, crear un apuntador y asignarlo al apuntador
-                                //Primero creamos el bloque nuevo
-                                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                                
-                                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
-
-                                //Actualizamos el apuntador
-                                apuntadoresDobles.b_pointers[k] = apuntador_nuevo_bloque_apuntador;
-                                fseek(archivo, apuntadoresTriples.b_pointers[j], SEEK_SET);
-                                fwrite(&apuntadoresDobles, sizeof(BloqueApuntador), 1, archivo);
-                                goto SiguienteCarpeta;
-                            }
-                        }
-                    } else {
-                        //Tenemos que crear un bloque, crear un apuntador, crear una puntador y asignarlo al apuntador
-                        int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                        make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                        update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                        
-                        //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                        int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                        make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
-
-                        //Ahora creamos el bloque de apuntadores apuntando a el bloque de apuntadores anterior
-                        int apuntador_nuevo_bloque_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                        make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador, apuntador_nuevo_bloque_apuntador, path);
-
-                        //Actualizamos el apuntador
-                        apuntadoresTriples.b_pointers[j] = apuntador_nuevo_bloque_apuntador_apuntador;
-                        fseek(archivo, inodo.i_block[i], SEEK_SET);
-                        fwrite(&apuntadoresTriples, sizeof(BloqueApuntador), 1, archivo);
-                        goto SiguienteCarpeta;
-                    }
-                }
-            } else {
-                //Tenemos que meter un bloque de apuntadores que apunte a otro bloque de apuntadores 
-                //que apunte a otro bloque de apuntadores que apunte a un bloque de carpeta que apunte al nuevo inodo
-                //Primero creamos el bloque nuevo
-                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, inodito_start);
-                
-                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                int apuntador_nuevo_bloque_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                make_new_block_pointers(apuntador_nuevo_bloque_apuntador, apuntador_nuevo_bloque, path);
-
-                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                int apuntador_nuevo_bloque_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador, apuntador_nuevo_bloque_apuntador, path);
-
-                //Ahora creamos el bloque de apuntadores apuntando directamente al bloque nuevo
-                int apuntador_nuevo_bloque_apuntador_apuntador_apuntador = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueApuntador), path);
-                make_new_block_pointers(apuntador_nuevo_bloque_apuntador_apuntador_apuntador, apuntador_nuevo_bloque_apuntador_apuntador, path);
-
-                //Actualizamos el apuntador
-                inodo.i_block[i] = apuntador_nuevo_bloque_apuntador_apuntador_apuntador;
-                fseek(archivo, inodo_start, SEEK_SET);
-                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
-                goto SiguienteCarpeta;
-            }
-        } else {
-            //Apuntador indirecto
-            if(inodo.i_block[i] != -1){
-                //apuntadores.b_pointers[j] tiene el apuntador a un bloque
-                if(update_block_to_new_inode(inodo.i_block[i], path, token, inodito_start)) goto SiguienteCarpeta;
-            } else {
-                //Esto quiere decir que tenemos que crear un nuevo bloque
-                int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
-                make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                update_block_to_new_inode(inodo.i_block[i], path, token, inodito_start);
-
-                //Actualizamos el inodo
-                inodo.i_block[i] = apuntador_nuevo_bloque;
-                fseek(archivo, inodo_start, SEEK_SET);
-                fwrite(&inodo, sizeof(TablaInodo), 1, archivo);
-                goto SiguienteCarpeta;
-            }
-        }
+    //Ahora tenemos que actualizar el inodo padre
+    if(set_inodo_to_inodo(inodo_start, inodito_start, bloquesito, token, fit, path) == false){
+        //Si llega a este punto, creo que es porque no encontro ningun espacio libre dentro del inodo (MUY RARO)
+        cout << "[ERROR] > No se encontro mas espacio dentro del inodo" << endl;
+        fclose(archivo);
+        return -1;
     }
-
-    //Si llega a este punto, creo que es porque no encontro ningun espacio libre dentro del inodo (MUY RARO)
-    cout << "[ERROR] > No se encontro mas espacio dentro del inodo" << endl;
-    fclose(archivo);
-    return -1;
-
-    SiguienteCarpeta:
 
     //Cerramos el archivo antes se seguir iterando
     fclose(archivo);
-
-    //cout << "QUIERO VER COMO QUEDO EL INODO ACTUAL:" << endl;
-    //print_inodo(inodo);
-
 
     //Tenemos que pasar a la siguiente carpeta
     count_token++;
@@ -979,8 +1016,8 @@ int make_path(char * token, int inodo_start, string path, SuperBloque bloquesito
     return make_path(token, inodito_start, path, bloquesito, fit, count_token, total_token);
 }
 
-
-int make_file_path(int inodo_start, SuperBloque bloquesito, char fit, char * token, string cont, string path){
+int make_path_file(int inodo_start, SuperBloque bloquesito, char fit, char * token, string cont, string path){
+    cout << "Este es el nombre: " << token << endl;
     //Primero obtenemos el inodo
     TablaInodo inodo;
     FILE *archivo = fopen(path.c_str(), "rb+");
@@ -990,180 +1027,195 @@ int make_file_path(int inodo_start, SuperBloque bloquesito, char fit, char * tok
     //Verificamos si ya existe el archivo dentro del inodo
     int siguiente_inodo = exist_name_in_inode(inodo, token, path);
     if(siguiente_inodo != -1){
-        //Encontramos el inodo del archivo
-        
-    } else {
-        //Tenemos que crear desde cero el archivo
-        int posicion_inodito = get_block_start_free(bloquesito.s_inodes_count, bloquesito.s_bm_inode_start, bloquesito.s_inode_start, 1, fit, sizeof(TablaInodo), path);
-        TablaInodo inodito;
-        inodito.i_type = 1;
-        //Llenamos de -1 todas las posiciones
-        for(int i = 0; i < 15; i ++)
-            inodito.i_block[i] = -1;
+        TablaInodo inodoSiguiente;
+        fseek(archivo, siguiente_inodo, SEEK_SET);
+        fread(&inodoSiguiente, sizeof(TablaInodo), 1, archivo);
+        //Obtenemos el contenido
+        BloqueArchivo contenido;
+        fseek(archivo, inodoSiguiente.i_block[0], SEEK_SET);
+        fread(&contenido, sizeof(BloqueArchivo), 1, archivo);
+        cout << contenido.b_content << endl;
+    }
 
-        //Tenemos que crear los bloques que llevaran el contenido
-        //Obtenemos el size en bytes de contenido
-        char contChar[cont.length()];
-        strcpy(contChar, cont.c_str());
+    //Tenemos que crear los bloques que llevaran el contenido
+    //Obtenemos el size en bytes de contenido
+    char contChar[cont.length()];
+    strcpy(contChar, cont.c_str());
 
-        int size_bloques = sizeof(contChar);
-        cout << "Este es el size del cont: " << size_bloques << endl;
-        //Obtenemos la cantidad de bloques que tendremos que usar para guardar el contenido
-        int count_block = size_bloques / 50;
-        int sobra_block = size_bloques % 50;
-        if(sobra_block > 0){
-            count_block++;
-        } 
-        cout << "Esta es la cantidad de bloques que se necesitan: " << count_block << endl;
-        cout << "Este es el sobrante: " << sobra_block << endl;
+    int size_bloques = sizeof(contChar);
+    //Obtenemos la cantidad de bloques que tendremos que usar para guardar el contenido
+    int count_block = size_bloques / 49;
+    int sobra_block = size_bloques % 49;
+    if(sobra_block > 0) count_block++;
 
+    //Obtenemos las posiciones de los bloques
+    int posicion_inodito = -1;
+    if(siguiente_inodo != -1) posicion_inodito = siguiente_inodo;
+    else posicion_inodito = get_block_start_free(bloquesito.s_inodes_count, bloquesito.s_bm_inode_start, bloquesito.s_inode_start, 1, fit, sizeof(TablaInodo), path);
+    int posicion_inicio_bloquesitos = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, count_block, fit, sizeof(BloqueArchivo), path);
+    if(posicion_inicio_bloquesitos == -1 || posicion_inodito == -1){
+        cout << posicion_inicio_bloquesitos << endl;
+        cout << "[Error] > No se encontro espacio libre para la creacion del archivo" << endl; 
+        return false;
+    }
 
-        int posicion_inicio_bloquesitos = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueArchivo), path);
-        if(posicion_inicio_bloquesitos == -1){
-            cout << "[Error] > No ingreso el parametro size ni el cont" << endl; 
-        }
-        int posiciciones[count_block];
+    //Obtenemos el inodo en caso de que ya exista,si no pos lo creamos
+    TablaInodo inodito;
+    if(siguiente_inodo != -1){
+        fseek(archivo, posicion_inodito, SEEK_SET);
+        fread(&inodito, sizeof(TablaInodo), 1, archivo);
+    }
+    inodito.i_type = 1;
+    //Llenamos de -1 todas las posiciones
+    for(int i = 0; i < 15; i ++)
+        inodito.i_block[i] = -1;
 
-        //Creamos y escribimos los bloques
-        fseek(archivo, posicion_inicio_bloquesitos, SEEK_SET);
-        for(int i = 0; i < count_block; i++){
-            BloqueArchivo archivito;
-            strcpy(archivito.b_name, token);
-            if(i == count_block - 1 && sobra_block > 0){
-                //Aqui solo debemos de meter los que sobran
-                for(int j = 0; j < sobra_block; j++){
-                    archivito.b_content[j] = contChar[(i+1)*(j+1)];
-                }
-            } else {
-                //Aqui es llenar el bloque
-                for(int j = 0; j < 50; j++){
-                    archivito.b_content[j] = contChar[(i+1)*(j+1)];
-                }
+    int posiciciones[count_block];
+
+    //Creamos y escribimos los bloques
+    fseek(archivo, posicion_inicio_bloquesitos, SEEK_SET);
+    int indice = 0;
+    for(int i = 0; i < count_block; i++){
+        BloqueArchivo archivito;
+        strcpy(archivito.b_name, token);
+        if(i == count_block - 1 && sobra_block > 0){
+            //Aqui solo debemos de meter los que sobran
+            for(int j = 0; j < sobra_block; j++){
+                archivito.b_content[j] = contChar[indice];
+                indice++;
             }
-            //Ahora tenemos que escribir el archivo
-            posiciciones[i] = ftell(archivo);
-            fwrite(&archivito, sizeof(BloqueArchivo), 1, archivo);
+        } else {
+            //Aqui es llenar el bloque
+            for(int j = 0; j < 49; j++){
+                archivito.b_content[j] = contChar[indice];
+                indice++;
+            }
         }
+        //Ahora tenemos que escribir el archivo
+        posiciciones[i] = ftell(archivo);
+        fwrite(&archivito, sizeof(BloqueArchivo), 1, archivo);
+        //Reseteamos el contenido del bloque
+        memset(archivito.b_content, 0, sizeof(archivito.b_content));
+    }
 
-        //Ahora tenemos que escribir las posicion dentro del inodo
-        for(int i = 0; i < count_block; i++){
-            for(int j = 0; j < 15; j++){
-                if(j > 12){
-                    if(inodito.i_block[j] == -1){
-                        inodito.i_block[j] = posiciciones[i];
-                        goto SiguienteIteracion;
-                    } 
-                } else if(j == 12){
-                    if(inodito.i_block[j] == -1){
-                        //tenemos que crear el nuevo bloque de apuntadores
-                        int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                        inodito.i_block[j] =  make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
-                        goto SiguienteIteracion;
-                    } else {
-                        BloqueApuntador apuntadores;
-                        fseek(archivo, inodito.i_block[j], SEEK_SET);
-                        fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                        for (int m = 0; m < 16; m++){
-                            if(apuntadores.b_pointers[m] == -1){
-                                apuntadores.b_pointers[m] = posiciciones[i];
-                                //Actualizamos el apuntador
-                                fseek(archivo, inodito.i_block[j], SEEK_SET);
-                                fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                goto SiguienteIteracion;
-                            }
+    //Ahora tenemos que escribir las posiciones dentro del inodo
+    for(int i = 0; i < count_block; i++){
+        for(int j = 0; j < 15; j++){
+            if(j < 12){
+                if(inodito.i_block[j] == -1){
+                    inodito.i_block[j] = posiciciones[i];
+                    goto SiguienteIteracion;
+                } 
+            } else if(j == 12){
+                if(inodito.i_block[j] == -1){
+                    //tenemos que crear el nuevo bloque de apuntadores
+                    int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                    inodito.i_block[j] =  make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
+                    goto SiguienteIteracion;
+                } else {
+                    BloqueApuntador apuntadores;
+                    fseek(archivo, inodito.i_block[j], SEEK_SET);
+                    fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                    for (int m = 0; m < 16; m++){
+                        if(apuntadores.b_pointers[m] == -1){
+                            apuntadores.b_pointers[m] = posiciciones[i];
+                            //Actualizamos el apuntador
+                            fseek(archivo, inodito.i_block[j], SEEK_SET);
+                            fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                            goto SiguienteIteracion;
                         }
                     }
-                } else if(j == 13){
-                    if(inodito.i_block[j] == -1){
-                        //tenemos que crear el nuevo bloque de apuntadores
-                        int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                        make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
-                        //tenemos que crear el nuevo bloque de apuntadores
-                        int posicion_apuntadores_dobles = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                        inodito.i_block[j] = make_new_block_pointers(posicion_apuntadores_dobles, posicion_apuntadores, path);
-                        goto SiguienteIteracion;
-                    } else {
-                        BloqueApuntador apuntadores_dobles;
-                        fseek(archivo, inodito.i_block[j], SEEK_SET);
-                        fread(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
-                        for (int m = 0; m < 16; m++){
-                            if(apuntadores_dobles.b_pointers[m] == -1){
-                                //tenemos que crear el nuevo bloque de apuntadores
-                                int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                                apuntadores_dobles.b_pointers[m] = make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
-                                //Actualizamos el apuntador
-                                fseek(archivo, inodito.i_block[j], SEEK_SET);
-                                fwrite(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
-                                goto SiguienteIteracion;
-                            } else {
-                                BloqueApuntador apuntadores;
-                                fseek(archivo, apuntadores_dobles.b_pointers[m], SEEK_SET);
-                                fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                for (int p = 0; p < 16; p++){
-                                    if(apuntadores.b_pointers[p] == -1){
-                                        apuntadores.b_pointers[p] = posiciciones[i];
-                                        //Actualizamos el apuntador
-                                        fseek(archivo, apuntadores_dobles.b_pointers[m], SEEK_SET);
-                                        fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                        goto SiguienteIteracion;
-                                    }
+                }
+            } else if(j == 13){
+                if(inodito.i_block[j] == -1){
+                    //tenemos que crear el nuevo bloque de apuntadores
+                    int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                    make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
+                    //tenemos que crear el nuevo bloque de apuntadores
+                    int posicion_apuntadores_dobles = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                    inodito.i_block[j] = make_new_block_pointers(posicion_apuntadores_dobles, posicion_apuntadores, path);
+                    goto SiguienteIteracion;
+                } else {
+                    BloqueApuntador apuntadores_dobles;
+                    fseek(archivo, inodito.i_block[j], SEEK_SET);
+                    fread(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
+                    for (int m = 0; m < 16; m++){
+                        if(apuntadores_dobles.b_pointers[m] == -1){
+                            //tenemos que crear el nuevo bloque de apuntadores
+                            int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                            apuntadores_dobles.b_pointers[m] = make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
+                            //Actualizamos el apuntador
+                            fseek(archivo, inodito.i_block[j], SEEK_SET);
+                            fwrite(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
+                            goto SiguienteIteracion;
+                        } else {
+                            BloqueApuntador apuntadores;
+                            fseek(archivo, apuntadores_dobles.b_pointers[m], SEEK_SET);
+                            fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                            for (int p = 0; p < 16; p++){
+                                if(apuntadores.b_pointers[p] == -1){
+                                    apuntadores.b_pointers[p] = posiciciones[i];
+                                    //Actualizamos el apuntador
+                                    fseek(archivo, apuntadores_dobles.b_pointers[m], SEEK_SET);
+                                    fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                                    goto SiguienteIteracion;
                                 }
                             }
                         }
                     }
-                } else if(j == 14){
-                    if(inodito.i_block[j] == -1){
-                        //tenemos que crear el nuevo bloque de apuntadores
-                        int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                        make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
-                        //tenemos que crear el nuevo bloque de apuntadores
-                        int posicion_apuntadores_dobles = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                        make_new_block_pointers(posicion_apuntadores_dobles, posicion_apuntadores, path);
-                        //tenemos que crear el nuevo bloque de apuntadores
-                        int posicion_apuntadores_triples = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                        inodito.i_block[j] = make_new_block_pointers(posicion_apuntadores_triples, posicion_apuntadores_dobles, path);
-                        goto SiguienteIteracion;
-                    } else {
-                        BloqueApuntador apuntadores_triples;
-                        fseek(archivo, inodito.i_block[j], SEEK_SET);
-                        fread(&apuntadores_triples, sizeof(BloqueApuntador), 1, archivo);
-                        for (int m = 0; m < 16; m++){
-                            if(apuntadores_triples.b_pointers[m] == -1){
-                                //tenemos que crear el nuevo bloque de apuntadores
-                                int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                                make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
-                                //tenemos que crear el nuevo bloque de apuntadores
-                                int posicion_apuntadores_dobles = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                                apuntadores_triples.b_pointers[m] = make_new_block_pointers(posicion_apuntadores_dobles, posicion_apuntadores, path);
-                                //Actualizamos el apuntador
-                                fseek(archivo, inodito.i_block[j], SEEK_SET);
-                                fwrite(&apuntadores_triples, sizeof(BloqueApuntador), 1, archivo);
-                                goto SiguienteIteracion;
-                            } else {
-                                BloqueApuntador apuntadores_dobles;
-                                fseek(archivo, apuntadores_triples.b_pointers[m], SEEK_SET);
-                                fread(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
-                                for (int l = 0; l < 16; l++){
-                                    if(apuntadores_dobles.b_pointers[l] == -1){
-                                        //tenemos que crear el nuevo bloque de apuntadores
-                                        int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
-                                        apuntadores_dobles.b_pointers[l] = make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
-                                        //Actualizamos el apuntador
-                                        fseek(archivo, apuntadores_triples.b_pointers[m], SEEK_SET);
-                                        fwrite(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
-                                        goto SiguienteIteracion;
-                                    } else {
-                                        BloqueApuntador apuntadores;
-                                        fseek(archivo, apuntadores_dobles.b_pointers[l], SEEK_SET);
-                                        fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                        for (int p = 0; p < 16; p++){
-                                            if(apuntadores.b_pointers[p] == -1){
-                                                apuntadores.b_pointers[p] = posiciciones[i];
-                                                //Actualizamos el apuntador
-                                                fseek(archivo, apuntadores_dobles.b_pointers[l], SEEK_SET);
-                                                fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-                                                goto SiguienteIteracion;
-                                            }
+                }
+            } else if(j == 14){
+                if(inodito.i_block[j] == -1){
+                    //tenemos que crear el nuevo bloque de apuntadores
+                    int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                    make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
+                    //tenemos que crear el nuevo bloque de apuntadores
+                    int posicion_apuntadores_dobles = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                    make_new_block_pointers(posicion_apuntadores_dobles, posicion_apuntadores, path);
+                    //tenemos que crear el nuevo bloque de apuntadores
+                    int posicion_apuntadores_triples = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                    inodito.i_block[j] = make_new_block_pointers(posicion_apuntadores_triples, posicion_apuntadores_dobles, path);
+                    goto SiguienteIteracion;
+                } else {
+                    BloqueApuntador apuntadores_triples;
+                    fseek(archivo, inodito.i_block[j], SEEK_SET);
+                    fread(&apuntadores_triples, sizeof(BloqueApuntador), 1, archivo);
+                    for (int m = 0; m < 16; m++){
+                        if(apuntadores_triples.b_pointers[m] == -1){
+                            //tenemos que crear el nuevo bloque de apuntadores
+                            int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                            make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
+                            //tenemos que crear el nuevo bloque de apuntadores
+                            int posicion_apuntadores_dobles = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                            apuntadores_triples.b_pointers[m] = make_new_block_pointers(posicion_apuntadores_dobles, posicion_apuntadores, path);
+                            //Actualizamos el apuntador
+                            fseek(archivo, inodito.i_block[j], SEEK_SET);
+                            fwrite(&apuntadores_triples, sizeof(BloqueApuntador), 1, archivo);
+                            goto SiguienteIteracion;
+                        } else {
+                            BloqueApuntador apuntadores_dobles;
+                            fseek(archivo, apuntadores_triples.b_pointers[m], SEEK_SET);
+                            fread(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
+                            for (int l = 0; l < 16; l++){
+                                if(apuntadores_dobles.b_pointers[l] == -1){
+                                    //tenemos que crear el nuevo bloque de apuntadores
+                                    int posicion_apuntadores = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, size_bloques, fit, sizeof(BloqueApuntador), path);
+                                    apuntadores_dobles.b_pointers[l] = make_new_block_pointers(posicion_apuntadores, posiciciones[i], path);
+                                    //Actualizamos el apuntador
+                                    fseek(archivo, apuntadores_triples.b_pointers[m], SEEK_SET);
+                                    fwrite(&apuntadores_dobles, sizeof(BloqueApuntador), 1, archivo);
+                                    goto SiguienteIteracion;
+                                } else {
+                                    BloqueApuntador apuntadores;
+                                    fseek(archivo, apuntadores_dobles.b_pointers[l], SEEK_SET);
+                                    fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                                    for (int p = 0; p < 16; p++){
+                                        if(apuntadores.b_pointers[p] == -1){
+                                            apuntadores.b_pointers[p] = posiciciones[i];
+                                            //Actualizamos el apuntador
+                                            fseek(archivo, apuntadores_dobles.b_pointers[l], SEEK_SET);
+                                            fwrite(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                                            goto SiguienteIteracion;
                                         }
                                     }
                                 }
@@ -1172,20 +1224,26 @@ int make_file_path(int inodo_start, SuperBloque bloquesito, char fit, char * tok
                     }
                 }
             }
-            SiguienteIteracion:
-            cout << endl;
         }
-
-
-        //Ahora tenemos que actualizar el inodo actual
-        
+        SiguienteIteracion:
+        int hola;
     }
 
+    //Ahora escribimos el nuevo inodo
+    fseek(archivo, posicion_inodito, SEEK_SET);
+    fwrite(&inodito, sizeof(TablaInodo), 1, archivo);
+
+    //Si el inodo es nuevo, tenemos que enlazarlo al nodo anterior jeje
+    if(siguiente_inodo == -1)
+        if(set_inodo_to_inodo(inodo_start, posicion_inodito, bloquesito, token, fit, path));
 
 
+    //Mensaje de confirmacion
+    cout << "[SUCCESS] > El archivo ha sido creada exitosamente" << endl;
 
     //Cerramos el archivo
     fclose(archivo);
+    return posicion_inodito;
 }
 
 
@@ -1205,6 +1263,7 @@ int get_count_tokens(char * token, int count){
 void make_file(int start, string pathDisk, string path, int size, string cont, bool p, char fit){
     string pathCopia1 = path;
     string pathCopia2 = path;
+    string pathCopia3 = path;
 
     //Obtenemos el cont
     string contenido = "";
@@ -1251,32 +1310,41 @@ void make_file(int start, string pathDisk, string path, int size, string cont, b
     //Verificamos si el 
     ruta = &pathCopia1[0];
     token = strtok(ruta, "/");
-    bool exist_path = search_path(token, bloquesito.s_inode_start, pathDisk, 1, count_tokens);
+    int posicion_inodo_carpeta = search_path(token, bloquesito.s_inode_start, pathDisk, 1, count_tokens);
 
 
-    if(!exist_path && !p){
+    if(posicion_inodo_carpeta = -1 && !p){
         //No existe el path ni tampoco debemos de crearlo
         cout << "[Error] > La ruta donde se quiere escribir no existe" << endl; 
         fclose(archivo);
         return;
-    } else if(!exist_path && p){
+    } else if(posicion_inodo_carpeta = -1 && p){
         //No existe el path pero si lo podemos crear
         ruta = &pathCopia2[0];
         token = strtok(ruta, "/");
-        
         int start_inodo = make_path(token, bloquesito.s_inode_start, pathDisk, bloquesito, fit, 1, count_tokens);
-        make_file_path(start_inodo, bloquesito, fit, token, contenido, pathDisk);
+
+        ruta = &pathCopia3[0];
+        token = strtok(ruta, "/");
+        for(int i = 0; i < count_tokens-1; i++) token = strtok(NULL, "/");
+        cout << "Este deberia de ser el nombre del archivo: " << token << endl;
+        make_path_file(start_inodo, bloquesito, fit, token, contenido, pathDisk);
 
     } else {
         //Si existe el path, por ende solo obtenemos el inodo y creamos el nuevo bloque
         cout << "Si encontro el path :)" << endl;
-    }
 
-    cout << "Aqui terminamos el mkfile" << endl;
+        ruta = &pathCopia3[0];
+        token = strtok(ruta, "/");
+        for(int i = 0; i < count_tokens-1; i++) token = strtok(NULL, "/");
+        cout << "Este deberia de ser el nombre del archivo: " << token << endl;
+        make_path_file(posicion_inodo_carpeta, bloquesito, fit, token, contenido, pathDisk);
+    }
 
     //Cerramos el file
     fclose(archivo);
 }
+
 
 void mkfile::make_mkfile(mkfile *archivito){
     //Validaciones
