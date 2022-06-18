@@ -1053,83 +1053,86 @@ void graph_inode(int start_inodo, string path, string pathRep){
                 }
             }
         } else if(i == 12){
-            //Primero conseguimos el bloque de apuntadores
-            int start_pointer = inodo.i_block[i];
-            //Obtenemos el bloque
-            BloqueApuntador apuntadores;
-            FILE *archivo = fopen((path).c_str(), "rb+");
-            fseek(archivo, start_pointer, SEEK_SET);
-            fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
-            fclose(archivo);
+            if(inodo.i_block[i] != -1){
+                //Primero conseguimos el bloque de apuntadores
+                int start_pointer = inodo.i_block[i];
+                //Obtenemos el bloque
+                BloqueApuntador apuntadores;
+                FILE *archivo = fopen((path).c_str(), "rb+");
+                fseek(archivo, start_pointer, SEEK_SET);
+                fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                fclose(archivo);
 
-            //Escribimos el bloque de apuntadores
-            outputfile << "\"node" << start_pointer << "\" [label = \"";
-            outputfile << "<f0> BLOQUE DE APUNTADORES " << start_pointer << " |";
-            for(int i = 0; i < 16; i++){
-                outputfile << "<f" << i+1 << "> " << apuntadores.b_pointers[i];
-                if(i < 15) outputfile << "|"; 
-            }
-            outputfile << "\"shape = \"record\"];" << endl;
+                //Escribimos el bloque de apuntadores
+                outputfile << "\"node" << start_pointer << "\" [label = \"";
+                outputfile << "<f0> BLOQUE DE APUNTADORES " << start_pointer << " |";
+                for(int i = 0; i < 16; i++){
+                    outputfile << "<f" << i+1 << "> " << apuntadores.b_pointers[i];
+                    if(i < 15) outputfile << "|"; 
+                }
+                outputfile << "\"shape = \"record\"];" << endl;
 
-            //Enlazamos el inodo al bloque de apuntadores
-            outputfile << "\"node" << start_inodo << "\":f" << i+1 << " -> \"node" << start_pointer << "\":f0;" << endl;
+                //Enlazamos el inodo al bloque de apuntadores
+                outputfile << "\"node" << start_inodo << "\":f" << i+1 << " -> \"node" << start_pointer << "\":f0;" << endl;
 
-            //Tenemos que iterar el bloque de apuntadores
-            for(int i = 0; i < 16; i++){
-                if(apuntadores.b_pointers[i] != -1){
-                    //Significa que encontramos un bloque
-                    if(inodo.i_type == '0'){
-                        //Quiere decir que los bloques son de carpeta
-                        int start_block = apuntadores.b_pointers[i];
-                        //Obtenemos el bloque
-                        BloqueCarpeta carpetita;
-                        FILE *archivo = fopen((path).c_str(), "rb+");
-                        fseek(archivo, start_block, SEEK_SET);
-                        fread(&carpetita, sizeof(BloqueCarpeta), 1, archivo);
-                        fclose(archivo);
-                        //Escribimos el bloque de inodo
-                        outputfile << "\"node" << start_block << "\" [label = \"";
-                        outputfile << "<f0> BLOQUE DE CARPETA " << start_block << " |";
-                        for(int i = 0; i < 4; i++){
-                            outputfile << "<f" << i+1 << "> [" << carpetita.b_content[i].b_name << "] ---- [" << carpetita.b_content[i].b_inodo << "]";
-                            if(i < 3) outputfile << "|"; 
+                //Tenemos que iterar el bloque de apuntadores
+                for(int i = 0; i < 16; i++){
+                    if(apuntadores.b_pointers[i] != -1){
+                        //Significa que encontramos un bloque
+                        if(inodo.i_type == '0'){
+                            //Quiere decir que los bloques son de carpeta
+                            int start_block = apuntadores.b_pointers[i];
+                            //Obtenemos el bloque
+                            BloqueCarpeta carpetita;
+                            FILE *archivo = fopen((path).c_str(), "rb+");
+                            fseek(archivo, start_block, SEEK_SET);
+                            fread(&carpetita, sizeof(BloqueCarpeta), 1, archivo);
+                            fclose(archivo);
+                            //Escribimos el bloque de inodo
+                            outputfile << "\"node" << start_block << "\" [label = \"";
+                            outputfile << "<f0> BLOQUE DE CARPETA " << start_block << " |";
+                            for(int i = 0; i < 4; i++){
+                                outputfile << "<f" << i+1 << "> [" << carpetita.b_content[i].b_name << "] ---- [" << carpetita.b_content[i].b_inodo << "]";
+                                if(i < 3) outputfile << "|"; 
+                            }
+                            outputfile << "\"shape = \"record\"];" << endl;
+
+                            //Ahora tenemos que enlazar el inodo actual al bloque
+                            outputfile << "\"node" << start_inodo << "\":f" << i+1 << " -> \"node" << start_block << "\":f0;" << endl;
+
+                            //Recursivamente pintamos los demas inodos
+                            for(int i = 1; i < 4; i++) {
+                                if(carpetita.b_content[i].b_inodo != -1){
+                                    //Graficamos el inodo
+                                    graph_inode(carpetita.b_content[i].b_inodo, path, pathRep);
+                                    //Lo enlazamos con el bloque
+                                    outputfile << "\"node" << start_block << "\":f" << i+1 << " -> \"node" << carpetita.b_content[i].b_inodo << "\":f0;" << endl;
+                                } 
+                            }
+                        } else {
+                            cout << "entraste aca?" << endl;
+
+                            //Quiere decir que los bloques son de archivos
+                            int start_block = apuntadores.b_pointers[i];
+                            //Obtenemos el bloque
+                            BloqueArchivo archivito;
+                            FILE *archivo = fopen((path).c_str(), "rb+");
+                            fseek(archivo, start_block, SEEK_SET);
+                            fread(&archivito, sizeof(BloqueArchivo), 1, archivo);
+                            fclose(archivo);
+                            //Escribimos el bloque de inodo
+                            outputfile << "\"node" << start_block << "\" [label = \"";
+                            outputfile << "<f0> BLOQUE DE ARCHIVO " << start_block << " |";
+                            outputfile << "<f1> [" << archivito.b_name << "] |";
+                            outputfile << "<f2> [" << archivito.b_content << "]";
+                            outputfile << "\"shape = \"record\"];" << endl;
+                            //Ahora enlazamos
+                            outputfile << "\"node" << start_inodo << "\":f" << i+1 << " -> \"node" << start_block << "\":f0;" << endl;
                         }
-                        outputfile << "\"shape = \"record\"];" << endl;
-
-                        //Ahora tenemos que enlazar el inodo actual al bloque
-                        outputfile << "\"node" << start_inodo << "\":f" << i+1 << " -> \"node" << start_block << "\":f0;" << endl;
-
-                        //Recursivamente pintamos los demas inodos
-                        for(int i = 1; i < 4; i++) {
-                            if(carpetita.b_content[i].b_inodo != -1){
-                                //Graficamos el inodo
-                                graph_inode(carpetita.b_content[i].b_inodo, path, pathRep);
-                                //Lo enlazamos con el bloque
-                                outputfile << "\"node" << start_block << "\":f" << i+1 << " -> \"node" << carpetita.b_content[i].b_inodo << "\":f0;" << endl;
-                            } 
-                        }
-                    } else {
-                        cout << "entraste aca?" << endl;
-
-                        //Quiere decir que los bloques son de archivos
-                        int start_block = apuntadores.b_pointers[i];
-                        //Obtenemos el bloque
-                        BloqueArchivo archivito;
-                        FILE *archivo = fopen((path).c_str(), "rb+");
-                        fseek(archivo, start_block, SEEK_SET);
-                        fread(&archivito, sizeof(BloqueArchivo), 1, archivo);
-                        fclose(archivo);
-                        //Escribimos el bloque de inodo
-                        outputfile << "\"node" << start_block << "\" [label = \"";
-                        outputfile << "<f0> BLOQUE DE ARCHIVO " << start_block << " |";
-                        outputfile << "<f1> [" << archivito.b_name << "] |";
-                        outputfile << "<f2> [" << archivito.b_content << "]";
-                        outputfile << "\"shape = \"record\"];" << endl;
-                        //Ahora enlazamos
-                        outputfile << "\"node" << start_inodo << "\":f" << i+1 << " -> \"node" << start_block << "\":f0;" << endl;
                     }
                 }
             }
+
 
         } else if(i == 13){
 

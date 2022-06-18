@@ -1,7 +1,6 @@
 #include "mkfile.h"
 #include "../fdisk/fdisk.h"
 #include "../listadoble/nodomount.h"
-#include "../estructura/estructura.h"
 #include <ctime>
 #include <algorithm>
 #include <string>
@@ -650,7 +649,7 @@ int exist_name_in_inode(TablaInodo inodo, char * token, string path){
 
 //Esta funcion busca el directorio dentro del sistema de archivos, si lo encuentra devuelve true, si no false
 int search_path(char * token, int inodo_start, string path, int count_token, int total_token){
-
+    cout << "Buscando el dir: " << token << endl;
     //Primero verificamos si el token siguiente es nulo, si si, significa que si existe la carpeta
     //cout << "************************ BUSCAMOS LA CARPETA *****************************" << endl;
     //cout << "Token: " << token << ", Count_token: " << count_token << ", Total_token: " << total_token << endl;
@@ -1234,7 +1233,7 @@ int make_path_file(int inodo_start, SuperBloque bloquesito, char fit, char * tok
 
 
     //Mensaje de confirmacion
-    cout << "[SUCCESS] > El archivo ha sido creada exitosamente" << endl;
+    cout << "[Success] > El archivo ha sido creado exitosamente" << endl;
 
     //Cerramos el archivo
     fclose(archivo);
@@ -1308,7 +1307,7 @@ void make_file(int start, string pathDisk, string path, int size, string cont, b
     int posicion_inodo_carpeta = search_path(token, bloquesito.s_inode_start, pathDisk, 1, count_tokens);
 
 
-    if(posicion_inodo_carpeta = -1 && !p){
+    if(posicion_inodo_carpeta == -1 && !p){
         //No existe el path ni tampoco debemos de crearlo
         cout << "[Error] > La ruta donde se quiere escribir no existe" << endl; 
         fclose(archivo);

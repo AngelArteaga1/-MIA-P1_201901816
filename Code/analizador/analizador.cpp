@@ -10,6 +10,7 @@
 #include "../unmount/unmount.h"
 #include "../mkfs/mkfs.h"
 #include "../mkfile/mkfile.h"
+#include "../mkdir/mkdir.h"
 #include "../rep/rep.h"
 
 /*Funcion para saber si la cadena es aceptada como nombre*/
@@ -310,6 +311,31 @@ void analizar_mkfile(char *parametros){
     mkfilesito->make_mkfile(mkfilesito);
 }
 /*Funcion para analizar el comando de mkfile*/
+void analizar_mkdir(char *parametros){
+    //Pasamos a la siguiente posicion
+    parametros = strtok(NULL, " ");
+    //Inicializamos nuestro disco
+    mkdir *mkdirsito = new mkdir();
+    while(parametros != NULL){
+        //Obtenemos el tipo y el valor del parametro actual
+        string tmpParam = parametros;
+        string tipo = get_tipo_parametro(tmpParam);
+        string valor = get_valor_parametro(tmpParam);
+        //Verificamos cual parametro es para inicializar el objeto (los parametros ya vienen en lowercase)
+        if(tipo == "$id"){
+            mkdirsito->id = valor;
+        } else if (tipo == "$path"){
+            valor = delete_comillas(valor);
+            mkdirsito->path = valor;
+        } else if (tipo == "@p"){
+            mkdirsito->p = true;
+        }
+        parametros = strtok(NULL, " ");
+    }
+    //Creamos la particion
+    mkdirsito->make_mkdir(mkdirsito);
+}
+/*Funcion para analizar el comando de mkfile*/
 void analizar_rep(char *parametros){
     //Pasamos a la siguiente posicion
     parametros = strtok(NULL, " ");
@@ -355,6 +381,8 @@ void analizar(char *comando) {
         analizar_mkfs(token);
     } else if (strcasecmp(token, "mkfile") == 0){
         analizar_mkfile(token);
+    } else if (strcasecmp(token, "mkdir") == 0){
+        analizar_mkdir(token);
     } else if (strcasecmp(token, "rep") == 0){
         analizar_rep(token);
     } else {
