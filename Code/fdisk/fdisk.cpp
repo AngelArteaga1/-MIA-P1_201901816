@@ -8,6 +8,7 @@
 
 #include "../estructura/estructura.h"
 #include "../mount/mount.h"
+#include "../analizador/analizador.h"
 
 fdisk::fdisk(){ }
 
@@ -916,10 +917,19 @@ void fdisk::make_fdisk(fdisk *particion){
     //Validaciones
     if(particion->path == "") { cout << "[Error] > No se ingreso el parametro de $path" << endl; return;}
     if(particion->nombre == "") { cout << "[Error] > No se ingreso el parametro de $name" << endl; return;}
-    
     FILE *file;
-    const char * ruta = particion->path.c_str();
-    if (!(file = fopen(ruta, "r"))) { cout << "[Error] > No se ha encontrado el disco" << endl; fclose(file); return;} else {fclose(file);}
+    bool usaraRaid = false;
+    string copyPath = get_path_raid(particion->path);
+    if (!(file = fopen(particion->path.c_str(), "r"))) { 
+        particion->path = copyPath;
+        usaraRaid = true;
+    } else fclose(file);
+    if(usaraRaid){
+        if(!(file = fopen(particion->path.c_str(), "r"))) {
+            cout << "[Error] > No se ha encontrado el disco" << endl; 
+            return;
+        } else fclose(file);
+    }
 
     //Seteamos el tamanio de la particion y tambien el tamanio que agregaria o quitaria
     int size = 0;
@@ -973,5 +983,12 @@ void fdisk::make_fdisk(fdisk *particion){
     }else if (particion->tipo == "L"){
         //Creamos una particion logica
         make_logica(particion->nombre, particion->path, size, fit);
+    }
+
+    //Realizamos una copia del disco
+    if(!usaraRaid){
+        string path_copy = get_path_raid(particion->path);
+        string cmd = "sudo cp \"" + particion->path + "\" \"" + path_copy + "\"";
+        system(cmd.c_str());
     }
 }

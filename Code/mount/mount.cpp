@@ -6,6 +6,7 @@
 #include "../fdisk/fdisk.h"
 #include "../listadoble/listamount.h"
 #include "../listadoble/nodomount.h"
+#include "../analizador/analizador.h"
 
 
 listaMount *listita = new listaMount;
@@ -129,54 +130,68 @@ void mount::make_mount(mount *montar){
     //Validaciones
     if(montar->path == "" && montar->name != "") { cout << "[Error] > No se ingreso el parametro de $path" << endl; return;}
     if(montar->name == "" && montar->path != "") { cout << "[Error] > No se ingreso el parametro de $name" << endl; return;}
-
     //Si no trae parametros, quiere decir que solo necesitamos imprimir
     if(montar->path == "" && montar->name == "") {print_list(listita); return;}
+    FILE *file;
+    bool usaraRaid = false;
+    string copyPath = get_path_raid(path);
+    if (!(file = fopen(path.c_str(), "r"))) { 
+        path = copyPath;
+        usaraRaid = true;
+    } else fclose(file);
+    if(usaraRaid){
+        if(!(file = fopen(path.c_str(), "r"))) {
+            cout << "[Error] > No se ha encontrado el disco" << endl; 
+            return;
+        } else fclose(file);
+    }
 
     //Leemos el disco
-    FILE *file;
+    file = fopen(path.c_str(),"rb+");
     MBR master;
-    if(file = fopen(path.c_str(),"rb+")){
-        //Obtenemos el mbr
-        fseek(file, 0, SEEK_SET);
-        fread(&master, sizeof(MBR), 1, file);
-        
-        //Verificamos si existe la particion dentro del disco
-        if(!exist_partition(path, name, master)){ cout << "[Error] > No existe una particion con el mismo nombre " << endl; fclose(file); return;}
+    //Obtenemos el mbr
+    fseek(file, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, file);
+    
+    //Verificamos si existe la particion dentro del disco
+    if(!exist_partition(path, name, master)){ cout << "[Error] > No existe una particion con el mismo nombre " << endl; fclose(file); return;}
 
-        //Si es particion primaria, tenemos que cambiar el status
-        if(is_partition_primaria(master, name)){
-            //Obtenemos la poscicion de la particion primaria
-            int num = get_partition_primaria(master, name);
-            //Cambiamos es status de la particion y actualizamos el mbr
-            master.mbr_partitiones[num].part_status = '2';
-            fseek(file, 0, SEEK_SET);
-            fwrite(&master, sizeof(MBR), 1, file);
-            //Agregamos la particion a la lista doble enlazada
-            add_new_mount(montar->name, montar->path);
-        }
-        //Si la particion es extendida
-        else if(is_partition_extendida(master, name)){
-            cout << "[Error] > No es posible montar una particion extendida" << endl;
-            fclose(file);
-            return;
-        }
-        //Quiere decir que es una particion logica
-        else {
-            //Obtenemos la posicion donde se encuentra la particion logica
-            int posicionLogica = get_partition_logica(name, path);
-            EBR logica;
-            fseek(file, posicionLogica, SEEK_SET);
-            fread(&logica, sizeof(EBR), 1, file);
-            ///Ahora tenemos que actualizar el status y volver a escribir el ebr
-            logica.part_status = '2';
-            fseek(file, logica.part_start, SEEK_SET);
-            fwrite(&logica, sizeof(EBR), 1, file);
-            //Agregamos la particion a la lista de montadas
-            add_new_mount(montar->name, montar->path);
-        }
+    //Si es particion primaria, tenemos que cambiar el status
+    if(is_partition_primaria(master, name)){
+        //Obtenemos la poscicion de la particion primaria
+        int num = get_partition_primaria(master, name);
+        //Cambiamos es status de la particion y actualizamos el mbr
+        master.mbr_partitiones[num].part_status = '2';
+        fseek(file, 0, SEEK_SET);
+        fwrite(&master, sizeof(MBR), 1, file);
+        //Agregamos la particion a la lista doble enlazada
+        add_new_mount(montar->name, path);
+    }
+    //Si la particion es extendida
+    else if(is_partition_extendida(master, name)){
+        cout << "[Error] > No es posible montar una particion extendida" << endl;
         fclose(file);
-    }else{
-        cout << "[Error] > No se ha encontrado el disco" << endl;
+        return;
+    }
+    //Quiere decir que es una particion logica
+    else {
+        //Obtenemos la posicion donde se encuentra la particion logica
+        int posicionLogica = get_partition_logica(name, path);
+        EBR logica;
+        fseek(file, posicionLogica, SEEK_SET);
+        fread(&logica, sizeof(EBR), 1, file);
+        ///Ahora tenemos que actualizar el status y volver a escribir el ebr
+        logica.part_status = '2';
+        fseek(file, logica.part_start, SEEK_SET);
+        fwrite(&logica, sizeof(EBR), 1, file);
+        //Agregamos la particion a la lista de montadas
+        add_new_mount(montar->name, montar->path);
+    }
+    fclose(file);
+    //Realizamos una copia del disco
+    if(!usaraRaid){
+        string path_copy = get_path_raid(path);
+        string cmd = "sudo cp \"" + path + "\" \"" + path_copy + "\"";
+        system(cmd.c_str());
     }
 }

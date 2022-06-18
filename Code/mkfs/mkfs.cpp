@@ -9,6 +9,7 @@
 #include <cmath>
 #include <stdio.h>
 #include <string.h>
+#include "../analizador/analizador.h"
 
 mkfs::mkfs(){ }
 
@@ -139,23 +140,42 @@ void mkfs::make_mkfs(mkfs *mkfsito){
         //Quiere decir que si existe la particion montada
         //Ahora obtenemos el nodo de la lista con la particion montada
         nodoMount* nodo = get_partition_in_mount(mkfsito->id);
-        FILE *archivo;
-        if(archivo=fopen((nodo->path).c_str(), "rb+")){
-            //Obtenemos el mbr
-            MBR master;
-            fseek(archivo, 0 , SEEK_SET);
-            fread(&master, sizeof(MBR), 1, archivo);
-            //Obtenemos la posicion de la particion
-            int start = get_partition_start(nodo->path, nodo->nombre, master);
-            //Obtenemos el size de la particion
-            int size = get_partition_size(nodo->path, nodo->nombre, master);
+        
+        FILE *file;
+        bool usaraRaid = false;
+        string copyPath = get_path_raid(nodo->path);
+        string realPath = nodo->path;
+        if (!(file = fopen(realPath.c_str(), "r"))) { 
+            realPath = copyPath;
+            usaraRaid = true;
+        } else fclose(file);
+        if(usaraRaid){
+            if(!(file = fopen(realPath.c_str(), "r"))) {
+                cout << "[Error] > No se ha encontrado el disco" << endl; 
+                return;
+            } else fclose(file);
+        }
 
-            //Si devuelve -1 quiere decir que no encontro la particion
-            if(start != -1) make_ext(start, size, nodo->path, mkfsito->type);
-            else cout << "[ERROR] > No existe la particion con ese nombre" << endl;
-            fclose(archivo);
-        }else{
-            cout << "[ERROR] > No existe ese disco" << endl;
+        FILE *archivo = fopen((realPath).c_str(), "rb+");
+        //Obtenemos el mbr
+        MBR master;
+        fseek(archivo, 0 , SEEK_SET);
+        fread(&master, sizeof(MBR), 1, archivo);
+        //Obtenemos la posicion de la particion
+        int start = get_partition_start(realPath, nodo->nombre, master);
+        //Obtenemos el size de la particion
+        int size = get_partition_size(realPath, nodo->nombre, master);
+
+        //Si devuelve -1 quiere decir que no encontro la particion
+        if(start != -1) make_ext(start, size, realPath, mkfsito->type);
+        else cout << "[ERROR] > No existe la particion con ese nombre" << endl;
+        fclose(archivo);
+
+        //Realizamos una copia del disco
+        if(!usaraRaid){
+            string path_copy = get_path_raid(realPath);
+            string cmd = "sudo cp \"" + realPath + "\" \"" + path_copy + "\"";
+            system(cmd.c_str());
         }
     } else {
         cout << "[ERROR] > No existe una particion montada con ese id" << endl;

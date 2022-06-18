@@ -64,6 +64,20 @@ string get_valor_parametro(string parametro){
     return valor;
 }
 
+/*Funcion para crear la copia de la ruta del archivo*/
+string get_path_raid(string path){
+    string path_raid = "";
+    for(int i = 0; i < path.length(); i++){
+        //Verificamos si el nombre es alfanumerico y con _
+        char caracter = path.at(i);
+        //Revisamos cuando el nombre traiga la extencion
+        if(caracter == '.'){
+            path_raid += "_copy"; 
+        }
+        path_raid += caracter;
+    }
+    return path_raid;
+}
 
 /*Funcion para analizar el comando de mkdisk*/
 void analizar_mkdisk(char *parametros){
@@ -254,7 +268,6 @@ void analizar_mkfs(char *parametros){
 }
 /*Funcion para analizar el comando de mkfile*/
 void analizar_mkfile(char *parametros){
-    cout << "Deberia de venir aca" << endl;
     //Pasamos a la siguiente posicion
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco

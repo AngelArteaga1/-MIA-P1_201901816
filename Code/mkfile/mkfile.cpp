@@ -11,6 +11,7 @@
 #include <string.h>
 #include <fstream>
 #include <iostream>
+#include "../analizador/analizador.h"
 
 int recorridos = 0;
 
@@ -93,12 +94,9 @@ int first_fit(int count, int bm_start, int size, string path){
 
     //Iteramos el bitmap
     fseek(archivo, bm_start, SEEK_SET);
-    cout << "************IMPRIMIRMOS EL BITMAT************" << endl;
-    cout << "con size de: " << size << endl;
     for(int i = 0; i < count; i++){
         //Primero leemos el estado del bloque o inodo actual
         fread(&status, sizeof(char), 1, archivo);
-        cout << status << " ";
         //Primero verificamos si no se ha encontrado espacio anteriormente
         if(!espacioEncontrado){
             //Esto quiere decir que no hemos encontrado espacio aun
@@ -120,7 +118,6 @@ int first_fit(int count, int bm_start, int size, string path){
         if(contador >= size) //Esto quiere decir que si hay espacio 
             break;
     }
-    cout << endl;
     //Realizamos el ultimo filtro
     if(contador < size) posicionInicial = -1;
 
@@ -388,7 +385,6 @@ int verify_inode_name(int bloque_carpeta_start, string path, char * token){
             //Creo que deberiamos revisar si el inodo es de tipo carpeta jeje
             bool esCarpeta = true;
             if(esCarpeta){
-                cout << "el inodo siguiente fue encontrado en :" << carpetita.b_content[j].b_inodo << endl;
                 return carpetita.b_content[j].b_inodo;
             }
         }
@@ -1017,7 +1013,6 @@ int make_path(char * token, int inodo_start, string path, SuperBloque bloquesito
 }
 
 int make_path_file(int inodo_start, SuperBloque bloquesito, char fit, char * token, string cont, string path){
-    cout << "Este es el nombre: " << token << endl;
     //Primero obtenemos el inodo
     TablaInodo inodo;
     FILE *archivo = fopen(path.c_str(), "rb+");
@@ -1026,7 +1021,7 @@ int make_path_file(int inodo_start, SuperBloque bloquesito, char fit, char * tok
 
     //Verificamos si ya existe el archivo dentro del inodo
     int siguiente_inodo = exist_name_in_inode(inodo, token, path);
-    if(siguiente_inodo != -1){
+    /*if(siguiente_inodo != -1){
         TablaInodo inodoSiguiente;
         fseek(archivo, siguiente_inodo, SEEK_SET);
         fread(&inodoSiguiente, sizeof(TablaInodo), 1, archivo);
@@ -1035,7 +1030,7 @@ int make_path_file(int inodo_start, SuperBloque bloquesito, char fit, char * tok
         fseek(archivo, inodoSiguiente.i_block[0], SEEK_SET);
         fread(&contenido, sizeof(BloqueArchivo), 1, archivo);
         cout << contenido.b_content << endl;
-    }
+    }*/
 
     //Tenemos que crear los bloques que llevaran el contenido
     //Obtenemos el size en bytes de contenido
@@ -1327,17 +1322,13 @@ void make_file(int start, string pathDisk, string path, int size, string cont, b
         ruta = &pathCopia3[0];
         token = strtok(ruta, "/");
         for(int i = 0; i < count_tokens-1; i++) token = strtok(NULL, "/");
-        cout << "Este deberia de ser el nombre del archivo: " << token << endl;
         make_path_file(start_inodo, bloquesito, fit, token, contenido, pathDisk);
 
     } else {
         //Si existe el path, por ende solo obtenemos el inodo y creamos el nuevo bloque
-        cout << "Si encontro el path :)" << endl;
-
         ruta = &pathCopia3[0];
         token = strtok(ruta, "/");
         for(int i = 0; i < count_tokens-1; i++) token = strtok(NULL, "/");
-        cout << "Este deberia de ser el nombre del archivo: " << token << endl;
         make_path_file(posicion_inodo_carpeta, bloquesito, fit, token, contenido, pathDisk);
     }
 
@@ -1359,22 +1350,42 @@ void mkfile::make_mkfile(mkfile *archivito){
         //Quiere decir que si existe la particion montada
         //Ahora obtenemos el nodo de la lista con la particion montada
         nodoMount* nodo = get_partition_in_mount(archivito->id);
-        FILE *archivo;
-        if(archivo = fopen((nodo->path).c_str(), "rb+")){
-            //Obtenemos el mbr
-            MBR master;
-            fseek(archivo, 0 , SEEK_SET);
-            fread(&master, sizeof(MBR), 1, archivo);
-            //Obtenemos la posicion de la particion
-            int start = get_partition_start(nodo->path, nodo->nombre, master);
-            char fit = get_partition_fit(nodo->path, nodo->nombre, master);
 
-            //Si devuelve -1 quiere decir que no encontro la particion
-            if(start != -1) make_file(start, nodo->path, archivito->path, archivito->size, archivito->cont, archivito->p, fit);
-            else cout << "[ERROR] > No existe la particion con ese nombre" << endl;
-            fclose(archivo);
-        }else{
-            cout << "[ERROR] > No existe ese disco" << endl;
+        FILE *file;
+        bool usaraRaid = false;
+        string copyPath = get_path_raid(nodo->path);
+        string realPath = nodo->path;
+        if (!(file = fopen(realPath.c_str(), "r"))) { 
+            realPath = copyPath;
+            usaraRaid = true;
+        } else fclose(file);
+        if(usaraRaid){
+            if(!(file = fopen(realPath.c_str(), "r"))) {
+                cout << "[Error] > No se ha encontrado el disco" << endl; 
+                return;
+            } else fclose(file);
+        }
+
+        FILE *archivo = fopen((realPath).c_str(), "rb+");
+
+        //Obtenemos el mbr
+        MBR master;
+        fseek(archivo, 0 , SEEK_SET);
+        fread(&master, sizeof(MBR), 1, archivo);
+        //Obtenemos la posicion de la particion
+        int start = get_partition_start(realPath, nodo->nombre, master);
+        char fit = get_partition_fit(realPath, nodo->nombre, master);
+
+        //Si devuelve -1 quiere decir que no encontro la particion
+        if(start != -1) make_file(start, realPath, archivito->path, archivito->size, archivito->cont, archivito->p, fit);
+        else cout << "[ERROR] > No existe la particion con ese nombre" << endl;
+        fclose(archivo);
+
+        //Realizamos una copia del disco
+        if(!usaraRaid){
+            string path_copy = get_path_raid(realPath);
+            string cmd = "sudo cp \"" + realPath + "\" \"" + path_copy + "\"";
+            system(cmd.c_str());
         }
     } else {
         cout << "[ERROR] > No existe una particion montada con ese id" << endl;

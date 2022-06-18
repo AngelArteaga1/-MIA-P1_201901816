@@ -71,4 +71,9 @@ void mkdisk::make_mkdisk(mkdisk *disco){
     master.mbr_tamano = disco->size*1000;
     //Creamos el disco
     create_mkdisk(disco->path, disco->name, disco->size*1000, master);
+    //Realizamos una copia del disco
+    string path_copy = disco->path + get_path_raid(disco->name);
+    string path_original = disco->path + disco->name;
+    string cmd = "sudo cp \"" + path_original + "\" \"" + path_copy + "\"";
+    system(cmd.c_str());
 }
