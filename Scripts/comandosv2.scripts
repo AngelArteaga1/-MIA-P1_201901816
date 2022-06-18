@@ -1,4 +1,5 @@
 Mkdisk $size=>64 $path=>"/home/angel/Documentos/Disquitos/" $name=>Disco_1.dsk
+Mkdisk $size=>64 $path=>"/home/angel/Documentos/mis discos bro/" $name=>Disco_1.dsk
 fdisk $sizE=>15 @unit=>M $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
 mount $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
 MkfS $id=>vda1 @type=>fast
@@ -17,6 +18,5 @@ rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte5.png" $name=>sb
 rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte6.png" $name=>tree
 rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte7.png" $name=>inode
 rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte8.png" $name=>block
-
-
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte9.png" @ruta=>"/home/user/docs/a.txt" $name=>file
 

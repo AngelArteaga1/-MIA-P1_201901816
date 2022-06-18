@@ -15,6 +15,7 @@ public:
     string name = "";
     string path = "";
     string id = "";
+    string ruta = "";
 
     void make_rep(rep *rep);
 };

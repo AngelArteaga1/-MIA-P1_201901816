@@ -1,37 +1,10 @@
 digraph g {
-fontname="Helvetica,Arial,sans-serif"
-node [fontname="Helvetica,Arial,sans-serif"]
-edge [fontname="Helvetica,Arial,sans-serif"]
-graph [rankdir = "LR"];
-node [fontsize = "16" shape = "ellipse"];
-edge [];
-"node6768" [label = "<f0> BLOQUE DE CARPETA 6768 |<f1> [root] ---- [-1]|<f2> [home] ---- [2772]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node6832" [label = "<f0> BLOQUE DE CARPETA 6832 |<f1> [home] ---- [2772]|<f2> [user] ---- [2876]|<f3> [comida] ---- [3292]|<f4> [people] ---- [3500]"shape = "record"];
-"node6896" [label = "<f0> BLOQUE DE CARPETA 6896 |<f1> [user] ---- [2876]|<f2> [docs] ---- [2980]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node6960" [label = "<f0> BLOQUE DE CARPETA 6960 |<f1> [docs] ---- [2980]|<f2> [a.txt] ---- [3084]|<f3> [usac] ---- [3188]|<f4> [] ---- [-1]"shape = "record"];
-"node7024" [label = "<f0> BLOQUE DE ARCHIVO 7024 |<f1> [a.txt] |<f2> [Hola, este es el contenido de un archivo, este co]"shape = "record"];
-"node7088" [label = "<f0> BLOQUE DE ARCHIVO 7088 |<f1> [a.txt] |<f2> [ntenido lo tengo que almacenar dentro de bloques.]"shape = "record"];
-"node7024":f1 -> "node7088":f1;
-"node7152" [label = "<f0> BLOQUE DE ARCHIVO 7152 |<f1> [a.txt] |<f2> [ La idea sera ver que pasa si la cadena es como m]"shape = "record"];
-"node7088":f1 -> "node7152":f1;
-"node7216" [label = "<f0> BLOQUE DE ARCHIVO 7216 |<f1> [a.txt] |<f2> [as grande de 2 bloques Hola, este es el contenido]"shape = "record"];
-"node7152":f1 -> "node7216":f1;
-"node7280" [label = "<f0> BLOQUE DE ARCHIVO 7280 |<f1> [a.txt] |<f2> [ de un archivo, este contenido lo tengo que almac]"shape = "record"];
-"node7216":f1 -> "node7280":f1;
-"node7344" [label = "<f0> BLOQUE DE ARCHIVO 7344 |<f1> [a.txt] |<f2> [enar dentro de bloques.La idea sera ver que pasa ]"shape = "record"];
-"node7280":f1 -> "node7344":f1;
-"node7408" [label = "<f0> BLOQUE DE ARCHIVO 7408 |<f1> [a.txt] |<f2> [si la cadena es como mas grande de 2 bloques]"shape = "record"];
-"node7344":f1 -> "node7408":f1;
-"node7472" [label = "<f0> BLOQUE DE CARPETA 7472 |<f1> [usac] ---- [3188]|<f2> [] ---- [-1]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node7536" [label = "<f0> BLOQUE DE CARPETA 7536 |<f1> [comida] ---- [3292]|<f2> [hola] ---- [3396]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node7600" [label = "<f0> BLOQUE DE CARPETA 7600 |<f1> [hola] ---- [3396]|<f2> [] ---- [-1]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node7664" [label = "<f0> BLOQUE DE CARPETA 7664 |<f1> [people] ---- [3500]|<f2> [] ---- [-1]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node7792" [label = "<f0> BLOQUE DE CARPETA 7792 |<f1> [angel] ---- [2772]|<f2> [angel] ---- [3604]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node7728" [label = "<f0> BLOQUE DE CARPETA 7728 |<f1> [angel] ---- [3604]|<f2> [arti] ---- [3708]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node7856" [label = "<f0> BLOQUE DE CARPETA 7856 |<f1> [arti] ---- [3708]|<f2> [listado.txt] ---- [3812]|<f3> [] ---- [-1]|<f4> [] ---- [-1]"shape = "record"];
-"node7920" [label = "<f0> BLOQUE DE ARCHIVO 7920 |<f1> [listado.txt] |<f2> [Sopas, calabazas, hermosas, bellas preciosas comi]"shape = "record"];
-"node7984" [label = "<f0> BLOQUE DE ARCHIVO 7984 |<f1> [listado.txt] |<f2> [das veganas, no se que estoy haciendo con mi vida]"shape = "record"];
-"node7920":f1 -> "node7984":f1;
-"node8048" [label = "<f0> BLOQUE DE ARCHIVO 8048 |<f1> [listado.txt] |<f2> [ jajaja pero bueno.]"shape = "record"];
-"node7984":f1 -> "node8048":f1;
-}
+node [shape=record fontname=Arial];
+a  [label="Hola, este es el contenido de un archivo, este co\l
+ntenido lo tengo que almacenar dentro de bloques.\l
+ La idea sera ver que pasa si la cadena es como m\l
+as grande de 2 bloques Hola, este es el contenido\l
+ de un archivo, este contenido lo tengo que almac\l
+enar dentro de bloques.La idea sera ver que pasa \l
+si la cadena es como mas grande de 2 bloques\l
+"]}

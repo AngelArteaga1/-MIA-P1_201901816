@@ -93,6 +93,13 @@ string get_path_without_name(string path){
     return path_without_name;
 }
 
+bool is_complete_path(string path){
+    if(path.length() > 0){
+        char final = path.at(path.length()-1);
+        if(final == '"') return true;
+    }
+    return false;
+}
 
 /*Funcion para analizar el comando de mkdisk*/
 void analizar_mkdisk(char *parametros){
@@ -100,6 +107,8 @@ void analizar_mkdisk(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     mkdisk *disco = new mkdisk();
+    string path = "";
+    bool leyendoPath = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual
         string tmpParam = parametros;
@@ -109,10 +118,25 @@ void analizar_mkdisk(char *parametros){
         if(tipo == "$size"){
             disco->size = stoi(valor);
         } else if (tipo == "$path"){
-            valor = delete_comillas(valor);
-            disco->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                disco->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
         } else if (tipo == "$name"){
             disco->name = valor;
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                disco->path = path;
+            } else {
+                path += " " + partPath;
+            }
         }
         parametros = strtok(NULL, " ");
     }
@@ -125,6 +149,8 @@ void analizar_rmdisk(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     rmdisk *disco = new rmdisk();
+    string path = "";
+    bool leyendoPath = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual (los parametros ya vienen en lowercase)
         string tmpParam = parametros;
@@ -132,8 +158,23 @@ void analizar_rmdisk(char *parametros){
         string valor = get_valor_parametro(tmpParam);
         //Verificamos cual parametro es para inicializar el objeto
         if(tipo == "$path"){
-            valor = delete_comillas(valor);
-            disco->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                disco->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                disco->path = path;
+            } else {
+                path += " " + partPath;
+            }
         }
         parametros = strtok(NULL, " ");
     }
@@ -146,6 +187,8 @@ void analizar_fdisk(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     fdisk *particion = new fdisk();
+    string path = "";
+    bool leyendoPath = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual
         string tmpParam = parametros;
@@ -157,8 +200,13 @@ void analizar_fdisk(char *parametros){
         } else if (tipo == "@unit"){
             particion->unidad = valor;
         } else if (tipo == "$path"){
-            valor = delete_comillas(valor);
-            particion->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                particion->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
         } else if (tipo == "@type"){
             particion->tipo = valor;
         } else if (tipo == "@fit"){
@@ -171,20 +219,19 @@ void analizar_fdisk(char *parametros){
             particion->agregar = stoi(valor);
         } else if (tipo == "@mov"){
             particion->mov = true;
-        } 
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                particion->path = path;
+            } else {
+                path += " " + partPath;
+            }
+        }
         parametros = strtok(NULL, " ");
     }
-    //Imprimimos la clase de particion
-    /*cout << "size: " << particion->size << endl;
-    cout << "unit: " << particion->unidad << endl;
-    cout << "path: " << particion->path << endl;
-    cout << "type: " << particion->tipo << endl;
-    cout << "fit: " << particion->ajuste << endl;
-    cout << "delete: " << particion->eliminar << endl;
-    cout << "name: " << particion->nombre << endl;
-    cout << "add: " << particion->agregar << endl;
-    cout << "mov: " << particion->mov << endl;*/
-
     //Creamos la particion
     particion->make_fdisk(particion);
 }
@@ -194,6 +241,8 @@ void analizar_exec(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     exec *exectutito = new exec();
+    string path = "";
+    bool leyendoPath = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual (los parametros ya vienen en lowercase)
         string tmpParam = parametros;
@@ -201,8 +250,23 @@ void analizar_exec(char *parametros){
         string valor = get_valor_parametro(tmpParam);
         //Verificamos cual parametro es para inicializar el objeto
         if(tipo == "$path"){
-            valor = delete_comillas(valor);
-            exectutito->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                exectutito->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                exectutito->path = path;
+            } else {
+                path += " " + partPath;
+            }
         }
         parametros = strtok(NULL, " ");
     }
@@ -215,6 +279,8 @@ void analizar_mount(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     mount *mountsito = new mount();
+    string path = "";
+    bool leyendoPath = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual (los parametros ya vienen en lowercase)
         string tmpParam = parametros;
@@ -222,11 +288,26 @@ void analizar_mount(char *parametros){
         string valor = get_valor_parametro(tmpParam);
         //Verificamos cual parametro es para inicializar el objeto
         if(tipo == "$path"){
-            valor = delete_comillas(valor);
-            mountsito->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                mountsito->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
         } else if (tipo == "$name"){
             mountsito->name = valor;
-        } 
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                mountsito->path = path;
+            } else {
+                path += " " + partPath;
+            }
+        }
         parametros = strtok(NULL, " ");
     }
     //Eliminamos el disco
@@ -287,6 +368,10 @@ void analizar_mkfile(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     mkfile *mkfilesito = new mkfile();
+    string path = "";
+    string cont = "";
+    bool leyendoPath = false;
+    bool leyendoCont = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual
         string tmpParam = parametros;
@@ -296,15 +381,45 @@ void analizar_mkfile(char *parametros){
         if(tipo == "$id"){
             mkfilesito->id = valor;
         } else if (tipo == "$path"){
-            valor = delete_comillas(valor);
-            mkfilesito->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                mkfilesito->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
         } else if (tipo == "@p"){
             mkfilesito->p = true;
         } else if (tipo == "@size"){
             mkfilesito->size = stoi(valor);
         } else if (tipo == "@cont"){
-            valor = delete_comillas(valor);
-            mkfilesito->cont = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                mkfilesito->cont = valor;
+            } else {
+                cont += valor;
+                leyendoCont = true;
+            }
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                mkfilesito->path = path;
+            } else {
+                path += " " + partPath;
+            }
+        } else if (leyendoCont){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                cont += " " + partPath;
+                leyendoCont = false;
+                cont = delete_comillas(cont);
+                mkfilesito->cont = cont;
+            } else {
+                cont += " " + partPath;
+            }
         }
         parametros = strtok(NULL, " ");
     }
@@ -317,6 +432,8 @@ void analizar_mkdir(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     mkdir *mkdirsito = new mkdir();
+    string path = "";
+    bool leyendoPath = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual
         string tmpParam = parametros;
@@ -326,10 +443,25 @@ void analizar_mkdir(char *parametros){
         if(tipo == "$id"){
             mkdirsito->id = valor;
         } else if (tipo == "$path"){
-            valor = delete_comillas(valor);
-            mkdirsito->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                mkdirsito->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
         } else if (tipo == "@p"){
             mkdirsito->p = true;
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                mkdirsito->path = path;
+            } else {
+                path += " " + partPath;
+            }
         }
         parametros = strtok(NULL, " ");
     }
@@ -342,6 +474,10 @@ void analizar_rep(char *parametros){
     parametros = strtok(NULL, " ");
     //Inicializamos nuestro disco
     rep *reportito = new rep();
+    string path = "";
+    string ruta = "";
+    bool leyendoPath = false;
+    bool leyendoRuta = false;
     while(parametros != NULL){
         //Obtenemos el tipo y el valor del parametro actual
         string tmpParam = parametros;
@@ -351,10 +487,43 @@ void analizar_rep(char *parametros){
         if(tipo == "$name"){
             reportito->name = valor;
         } else if (tipo == "$path"){
-            valor = delete_comillas(valor);
-            reportito->path = valor;
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                reportito->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
         } else if (tipo == "$id"){
             reportito->id = valor;
+        } else if (tipo == "@ruta"){
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                reportito->ruta = valor;
+            } else {
+                ruta += valor;
+                leyendoPath = true;
+            }
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                reportito->path = path;
+            } else {
+                path += " " + partPath;
+            }
+        } else if (leyendoRuta){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                ruta += " " + partPath;
+                leyendoRuta = false;
+                ruta = delete_comillas(ruta);
+                reportito->ruta = ruta;
+            } else {
+                ruta += " " + partPath;
+            }
         }
         parametros = strtok(NULL, " ");
     }
@@ -387,6 +556,6 @@ void analizar(char *comando) {
     } else if (strcasecmp(token, "rep") == 0){
         analizar_rep(token);
     } else {
-        cout << "Comando no aceptado :c" << endl;
+        //cout << "Comando no aceptado :c" << endl;
     }
 }

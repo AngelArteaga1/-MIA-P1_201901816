@@ -7,6 +7,8 @@
 #include <time.h>
 #include <iostream>
 #include <iomanip>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <algorithm>
 #include "../estructura/estructura.h"
@@ -15,6 +17,7 @@
 #include "../mount/mount.h"
 #include "../analizador/analizador.h"
 #include "../fdisk/fdisk.h"
+#include "../mkfile/mkfile.h"
 
 rep::rep(){ }
 
@@ -988,10 +991,91 @@ void make_block(string pathRep, string path, string name){
     fclose(archivo);
 
     if(archivo= fopen(pathRep.c_str(), "rb+")){
-        printf("[Success] > Se creo correctamente el reporte tree\n");
+        printf("[Success] > Se creo correctamente el reporte block\n");
         fclose(archivo);
     }else{
-        printf("[Error] > No fue posible crear el reporte tree\n");
+        printf("[Error] > No fue posible crear el reporte block\n");
+    }
+}
+
+void make_file(string pathRep, string path, string name, string rutaString){
+    //Copiamo la ruta 
+    string rutaCopia1 = rutaString;
+    string rutaCopia2 = rutaString;
+
+    //Obtenemos el el mbr
+    MBR master;
+    FILE *archivo = fopen((path).c_str(), "rb+");
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
+
+    //Obtenemos el superbloque
+    SuperBloque bloquesito;
+    int part_start = get_partition_start(path, name, master);
+    fseek(archivo, part_start, SEEK_SET);
+    fread(&bloquesito, sizeof(SuperBloque), 1, archivo);
+
+    //Obtenemos el numero de veces que tenemos que ir a buscar inodos
+    char * ruta = &rutaCopia1[0];
+    char * token = strtok(ruta, "/");
+    int count_tokens = get_count_tokens(token, 0);
+
+    //Obtenemos la posicion donde se encuentra el inodo
+    ruta = &rutaCopia2[0];
+    token = strtok(ruta, "/");
+    int posicion_inodo_carpeta = search_path(token, bloquesito.s_inode_start, path, 0, count_tokens);
+    if(posicion_inodo_carpeta == -1){
+        printf("[Error] > No fue posible encontrar la ruta del archivo\n");
+        return;
+    }
+    //Obtenemos el superbloque
+    TablaInodo inodo;
+    fseek(archivo, posicion_inodo_carpeta, SEEK_SET);
+    fread(&inodo, sizeof(TablaInodo), 1, archivo);
+
+
+    //Abrimos el archivo donde escribimos el reporte
+    //ofstream file;
+    outputfile.open("./reportes/reporte.dot",ios::out);
+    if(outputfile.fail()){
+        cout<<"Error no se pudo abrir el archivo";
+        return;
+    }
+
+    //Encabezado
+    outputfile << "digraph g {" << endl;
+    outputfile << "node [shape=record fontname=Arial];" << endl;
+
+    //Ahora tengo que escribir el contenido
+    outputfile << "a  [label=\"";
+    for(int i = 0; i < 15; i++){
+        if(i < 12){
+            if(inodo.i_block[i] != -1){
+                //Obtenemos el bloque
+                BloqueArchivo archivito;
+                archivo = fopen((path).c_str(), "rb+");
+                fseek(archivo, inodo.i_block[i], SEEK_SET);
+                fread(&archivito, sizeof(BloqueArchivo), 1, archivo);
+                outputfile << archivito.b_content << "\\l" << endl;
+            }
+        }
+    }
+    outputfile << "\"]";
+
+    //Terminamos la tabla
+    outputfile << "}";
+    outputfile.close();
+
+    //Procedemos a crear el archivo
+    string extension = "sudo dot -T " + get_extension(pathRep) + " ./reportes/reporte.dot -o " + pathRep;
+    system(extension.c_str());
+    fclose(archivo);
+
+    if(archivo= fopen(pathRep.c_str(), "rb+")){
+        printf("[Success] > Se creo correctamente el reporte file\n");
+        fclose(archivo);
+    }else{
+        printf("[Error] > No fue posible crear el reporte file\n");
     }
 }
 
@@ -1048,15 +1132,11 @@ void rep::make_rep(rep *reportito){
             make_inode(reportito->path, realPath, nodo->nombre);
         }else if (reportito->name == "BLOCK"){
             make_block(reportito->path, realPath, nodo->nombre);
-        }/*else if (reportito->name == "INODE"){
-            crearINODE(realPath, id);
-        }else if (reportito->name == "BLOCK"){
-            crearBLOCK(realPath, id);
-        }else if (reportito->name == "SB"){
-            crearSB(realPath, id);
+        }else if (reportito->name == "FILE"){
+            make_file(reportito->path, realPath, nodo->nombre, reportito->ruta);
         }else{
             cout << "[INFO] > Ya no me dio tiempo :c" << endl;
-        }*/
+        }
     }
 
 }
