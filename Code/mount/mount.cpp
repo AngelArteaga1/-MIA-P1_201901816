@@ -101,7 +101,7 @@ void add_new_mount(string nombre, string ruta){
         //Si el primero de la lista es nulo, por lo que tiene que ingresar en la primera posicion
         nodoMount *newNode = new nodoMount("vda1", ruta, nombre, 1, 'a');
         listita->primero = newNode;
-        cout << "[SUCCESS] > Se monto la particion" << endl;
+        cout << "[Success] > Se monto la particion" << endl;
     }else{
         //Esto significa que no es el primero de la lista
         nodoMount *tmp = listita->primero;
@@ -117,9 +117,9 @@ void add_new_mount(string nombre, string ruta){
             string id = "vd" + (letraChar + to_string(numero));
             nodoMount *newNode = new nodoMount(id, ruta, nombre, numero, letra);
             tmp->sig = newNode;
-            cout << "[SUCCESS] > Se monto la particion" << endl;
+            cout << "[Success] > Se monto la particion" << endl;
         }else{
-            cout << "[ERROR] > La particion ya ha sido montada" << endl;
+            cout << "[Error] > La particion ya ha sido montada" << endl;
         }
     }
 }

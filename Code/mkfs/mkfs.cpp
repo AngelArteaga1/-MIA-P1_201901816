@@ -114,7 +114,7 @@ void make_ext(int start, int size, string path, string type){
     fwrite(&inode, sizeof(TablaInodo), 1, file);
 
     //Mostramos mensaje de success
-    cout << "[SUCCESS] > Se le dio formato a la particion" << endl;
+    cout << "[Success] > Se le dio formato a la particion" << endl;
 
     //Cerramos el file
     fclose(file);
@@ -133,7 +133,7 @@ void mkfs::make_mkfs(mkfs *mkfsito){
     //Revisamos que tipo de tyes es el formato
     if (mkfsito->type=="FAST" || mkfsito->type == "FULL") tipo = mkfsito->type;
     else if (mkfsito->type == "") tipo = "FULL";
-    else{ cout << "[ERROR] > El parametro type es incorrecto" << endl; return; }
+    else{ cout << "[Error] > El parametro type es incorrecto" << endl; return; }
 
     //Validamos si existe la particion montada
     if(find_partition_in_mount(mkfsito->id)){
@@ -168,7 +168,7 @@ void mkfs::make_mkfs(mkfs *mkfsito){
 
         //Si devuelve -1 quiere decir que no encontro la particion
         if(start != -1) make_ext(start, size, realPath, mkfsito->type);
-        else cout << "[ERROR] > No existe la particion con ese nombre" << endl;
+        else cout << "[Error] > No existe la particion con ese nombre" << endl;
         fclose(archivo);
 
         //Realizamos una copia del disco
@@ -178,6 +178,6 @@ void mkfs::make_mkfs(mkfs *mkfsito){
             system(cmd.c_str());
         }
     } else {
-        cout << "[ERROR] > No existe una particion montada con ese id" << endl;
+        cout << "[Error] > No existe una particion montada con ese id" << endl;
     }
 }

@@ -649,7 +649,6 @@ int exist_name_in_inode(TablaInodo inodo, char * token, string path){
 
 //Esta funcion busca el directorio dentro del sistema de archivos, si lo encuentra devuelve true, si no false
 int search_path(char * token, int inodo_start, string path, int count_token, int total_token){
-    cout << "Buscando el dir: " << token << endl;
     //Primero verificamos si el token siguiente es nulo, si si, significa que si existe la carpeta
     //cout << "************************ BUSCAMOS LA CARPETA *****************************" << endl;
     //cout << "Token: " << token << ", Count_token: " << count_token << ", Total_token: " << total_token << endl;
@@ -935,7 +934,7 @@ bool set_inodo_to_inodo(int inodo_start, int nuevo_inodo, SuperBloque bloquesito
                 //Esto quiere decir que tenemos que crear un nuevo bloque
                 int apuntador_nuevo_bloque = get_block_start_free(bloquesito.s_block_count, bloquesito.s_bm_block_start, bloquesito.s_block_start, 1, fit, sizeof(BloqueCarpeta), path);
                 make_new_block_directory(apuntador_nuevo_bloque, inodo_start, token, path);
-                update_block_to_new_inode(inodo.i_block[i], path, token, nuevo_inodo);
+                update_block_to_new_inode(apuntador_nuevo_bloque, path, token, nuevo_inodo);
 
                 //Actualizamos el inodo
                 inodo.i_block[i] = apuntador_nuevo_bloque;

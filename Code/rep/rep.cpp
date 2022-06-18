@@ -20,473 +20,6 @@ rep::rep(){ }
 
 std::ofstream outputfile;
 
-/*
-
-void comprobarRuta(string path){
-    bool comprobar = true;
-    string Carpeta = path;
-    while(comprobar){
-        Carpeta = Carpeta.substr(0, Carpeta.size()-1);
-        char aux = Carpeta.back();
-        if (aux=='/'){
-            Carpeta = Carpeta.substr(0, Carpeta.size()-1);
-            comprobar = false;
-        }
-    }
-    //Verificamos si la ruta existe, si no creamos las carpetas
-    string rutaCarpeta = Carpeta;
-    if( access( rutaCarpeta.c_str(), F_OK ) == -1 ) {
-        string cmd = "mkdir -p \"" + rutaCarpeta + "\"";
-        system(cmd.c_str());
-     }
-}
-
-
-
-
-
-
-
-
-
-void crearINODE(string path, string id){
-    bool comprobar =false;
-    nodoMount *aux = ListaM->primero;
-    if (aux->id == id){
-        comprobar = true;
-    }else{
-        while (aux != nullptr){
-            if (aux->id == id){
-                comprobar = true;
-                break;
-            }
-            aux = aux->sig;
-        }
-    }
-    if (comprobar){
-        FILE *archivo;
-        if(archivo =fopen((aux->path).c_str(),"rb+")){
-            Disco master;
-            int NParticion = -1;
-            fseek(archivo, 0, SEEK_SET);
-            fread(&master, sizeof(Disco), 1, archivo);
-
-            ofstream file;
-            comprobarRuta(path);
-            file.open("./reportes/reporte.dot",ios::out);
-            if(file.fail()){
-                cout<<"Error no se pudo abrir el archivo";
-                exit(1);
-            }
-
-
-            for (int i = 0; i < 4; i++) {
-                if (strcmp(master.particiones[i].p_nombre, (aux->nombre).c_str())==0){
-                    NParticion = i;
-                    break;
-                }
-            }
-            if(NParticion != -1){
-                file<<"digraph G{\n"<<"node[shape=plaintext]\n"<<"concentrate=true\n"<<"ReporteINODE[label=<\n";
-                file<<"<TABLE BORDER=\"2\" CELLBORDER=\"1\" CELLSPACING=\"2\" >\n";
-                file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">Index</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">Tipo</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">Nombre</TD>\n"<<"</TR>\n";
-
-                SuperBloque super;
-                BloqueCarpeta block;
-                TablaInodo inodo;
-                fseek(archivo, master.particiones[NParticion].p_comienzo, SEEK_SET);
-                fread(&super, sizeof(TablaInodo), 1, archivo);
-
-                fseek(archivo, super.s_block_start, SEEK_SET);
-                fread(&block, sizeof(BloqueCarpeta), 1, archivo);
-                fseek(archivo, super.s_inode_start, SEEK_SET);
-                fread(&inodo, sizeof(TablaInodo), 1, archivo);
-                int n = 0;
-                int inodeS = super.s_inode_start;
-                string tipo = "";
-                while(block.b_content[n+1].b_inodo!=-1){
-                    if (inodo.i_type == '0'){
-                        tipo = "Carpeta";
-                    }else if (inodo.i_type == '1'){
-                        tipo = "Archivo";
-                    }
-                    string nombre = "";
-                    nombre = block.b_content[n+1].b_name;
-                    if (nombre == ".."){
-                        nombre = "";
-                    }
-                    file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">"+to_string(block.b_content[n+1].b_inodo)+"</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+tipo+"</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">/"+nombre+"</TD>\n"<<"</TR>\n";
-                    inodeS += int(sizeof(TablaInodo));
-                    fseek(archivo, inodeS, SEEK_SET);
-                    fread(&inodo, sizeof(TablaInodo), 1, archivo);
-                    n++;
-                }
-                file<<"</TABLE>>]\n}";
-                file.close();
-
-                string extension = "dot -T" +comprobarExtension(path)+ " ./reportes/reporte.dot -o "+path;
-                system(extension.c_str());
-                fclose(archivo);
-
-                if(archivo= fopen(path.c_str(), "rb+")){
-                    printf("Se creo correctamente el reporte Inode\n");
-                    fclose(archivo);
-                }else{
-                    printf("Error al crear el reporte Inode\n");
-                }
-
-            }else{
-                printf("Error no se encontro la particion\n");
-            }
-        }else{
-            printf("Error no se encontro el disco\n");
-        }
-    }else{
-        printf("Error no se encontro el mismo id montada\n");
-    }
-}
-
-void crearBLOCK(string path, string id){
-    bool comprobar =false;
-    nodoMount *aux = ListaM->primero;
-    if (aux->id == id){
-        comprobar = true;
-    }else{
-        while (aux != nullptr){
-            if (aux->id == id){
-                comprobar = true;
-                break;
-            }
-            aux = aux->sig;
-        }
-    }
-
-    if (comprobar){
-        FILE *archivo;
-        if(archivo =fopen((aux->path).c_str(),"rb+")){
-            Disco master;
-            int NParticion = -1;
-            int NParticionE = -1;
-            fseek(archivo, 0, SEEK_SET);
-            fread(&master, sizeof(Disco), 1, archivo);
-
-            ofstream file;
-            comprobarRuta(path);
-            file.open("./reportes/reporte.dot",ios::out);
-            if(file.fail()){
-                cout<<"Error no se pudo abrir el archivo";
-                exit(1);
-            }
-            for (int i = 0; i < 4; i++) {
-                if (strcmp(master.particiones[i].p_nombre, (aux->nombre).c_str())==0){
-                    NParticion = i;
-                    break;
-                }
-                if (master.particiones[i].p_type =='E'){
-                    NParticionE = i;
-                }
-            }
-            if(NParticion != -1){
-                file<<"digraph G{\n"<<"node[shape=box]\n"<<"concentrate=true\n"<<"rankdir=\"LR\"\n";
-                BloqueArchivo blockFile;
-                BloqueCarpeta blockCarpet;
-                SuperBloque super;
-                fseek(archivo, master.particiones[NParticion].p_comienzo, SEEK_SET);
-                fread(&super, sizeof(SuperBloque), 1, archivo);
-
-
-                int contador = 0;
-                int aux = super.s_bm_block_start;
-                char buffer;
-
-                while(aux<super.s_inode_start){
-                    fseek(archivo, super.s_bm_block_start+contador, SEEK_SET);
-                    buffer = char(fgetc(archivo));
-                    aux++;
-
-                    if(buffer== '1'){
-                        fseek(archivo, super.s_block_start+64*contador, SEEK_SET);
-                        fread(&blockCarpet, 64, 1 , archivo);
-                        file<< "nodo"+to_string(contador)+"[label=<\n<TABLE BORDER =\"0\">\n";
-                        file<<"<TR>\n<TD COLSPAN=\"2\">Bloque Carpeta "+to_string(contador)+"</TD>\n</TR>\n";
-                        file<<"<TR>\n<TD>b_name</TD><TD>b_inodo</TD>\n</TR>\n";
-                        /*for (int i = 0; i < 4; i++) {
-                            file<<
-                        }*
-                        int n = 0;
-                        while(blockCarpet.b_content[n].b_inodo != -1){
-                            string nombre = "";
-                            nombre = blockCarpet.b_content[n].b_name;
-                            //cout<<nombre<<endl;
-                            file<<"<TR>\n<TD>"+nombre+"</TD><TD>"+to_string(blockCarpet.b_content[n].b_inodo)+"</TD>\n</TR>\n";
-                            n++;
-                        }
-                        contador++;
-                        file<<"</TABLE>>]";
-                    }else if(buffer =='2'){
-                        fseek(archivo, super.s_block_start+64*contador,SEEK_SET);
-                        fread(&blockFile, 64, 1, archivo);
-                        string contenido ="";
-                        contenido = blockFile.b_content;
-                        file<<"nodo"+to_string(contador)+"[label=\"Bloque Archivo "+to_string(contador)+" \\n "+contenido+"\"]\n";
-                        contador++;
-
-                    }
-
-                }
-
-                for (int i = 0; i+1 < contador; i++) {
-                    file << "nodo"+to_string(i)+"->nodo"+to_string(i+1)+"\n";
-                }
-                file<< "}";
-                file.close();
-
-                string extension = "dot -T"+comprobarExtension(path)+ " ./reportes/reporte.dot -o "+path;
-                system(extension.c_str());
-                fclose(archivo);
-
-                if(archivo= fopen(path.c_str(), "rb+")){
-                    printf("Se creo correctamente el reporte block\n");
-                    fclose(archivo);
-                }else{
-                    printf("Error al crear el reporte block\n");
-                }
-
-            }else{
-                if(NParticionE != -1){
-                    ext Extendida;
-                    fseek(archivo, master.particiones[NParticionE].p_comienzo, SEEK_SET);
-                    fread(&Extendida, sizeof(ext), 1, archivo);
-                    bool comprobar2 = false;
-                    while ((ftell(archivo)<master.particiones[NParticionE].p_tam + master.particiones[NParticionE].p_comienzo)) {
-                        if (strcmp(Extendida.e_nombre, (aux->nombre).c_str())==0){
-                            comprobar2 = true;
-                            break;
-                        }
-                        if(Extendida.e_siguiente == -1){
-                            break;
-                        }
-                        fseek(archivo, Extendida.e_siguiente, SEEK_SET);
-                        fread(&Extendida, sizeof(ext), 1 , archivo);
-                    }
-                    if (comprobar2){
-                        file<<"digraph G{\n"<<"node[shape=box]\n"<<"concentrate=true\n"<<"rankdir=\"LR\"\n";
-                        BloqueArchivo blockFile;
-                        BloqueCarpeta blockCarpet;
-                        SuperBloque super;
-                        fseek(archivo, Extendida.e_comienzo, SEEK_SET);
-                        fread(&super, sizeof(SuperBloque), 1, archivo);
-
-
-                        int contador = 0;
-                        int aux = super.s_bm_block_start;
-                        char buffer;
-
-                        while(aux<super.s_inode_start){
-                            fseek(archivo, super.s_bm_block_start+contador, SEEK_SET);
-                            buffer = char(fgetc(archivo));
-                            aux++;
-
-                            if(buffer== '1'){
-                                fseek(archivo, super.s_block_start+64*contador, SEEK_SET);
-                                fread(&blockCarpet, 64, 1 , archivo);
-                                file<< "nodo"+to_string(contador)+"[label=<\n<TABLE BORDER =\"0\">\n";
-                                file<<"<TR>\n<TD COLSPAN=\"2\">Bloque Carpeta "+to_string(contador)+"</TD>\n</TR>\n";
-                                file<<"<TR>\n<TD>b_name</TD><TD>b_inodo</TD>\n</TR>\n";
-                                int n = 0;
-                                while(blockCarpet.b_content[n].b_inodo != -1){
-                                    string nombre = "";
-                                    nombre = blockCarpet.b_content[n].b_name;
-                                    //cout<<nombre<<endl;
-                                    file<<"<TR>\n<TD>"+nombre+"</TD><TD>"+to_string(blockCarpet.b_content[n].b_inodo)+"</TD>\n</TR>\n";
-                                    n++;
-                                }
-                                contador++;
-                                file<<"</TABLE>>]";
-                            }else if(buffer =='2'){
-                                fseek(archivo, super.s_block_start+64*contador,SEEK_SET);
-                                fread(&blockFile, 64, 1, archivo);
-                                string contenido ="";
-                                contenido = blockFile.b_content;
-                                file<<"nodo"+to_string(contador)+"[label=\"Bloque Archivo "+to_string(contador)+" \\n "+contenido+"\"]\n";
-                                contador++;
-
-                            }
-
-                        }
-
-                        for (int i = 0; i+1 < contador; i++) {
-                            file << "nodo"+to_string(i)+"->nodo"+to_string(i+1)+"\n";
-                        }
-                        file<< "}";
-                        file.close();
-
-                        string extension = "dot -T"+comprobarExtension(path)+ " ./reportes/reporte.dot -o "+path;
-                        system(extension.c_str());
-                        fclose(archivo);
-
-                        if(archivo= fopen(path.c_str(), "rb+")){
-                            printf("Se creo correctamente el reporte block\n");
-                            fclose(archivo);
-                        }else{
-                            printf("Error al crear el reporte block\n");
-                        }
-                    }else{
-                        printf("Error no se encontro la particion\n");
-                    }
-
-                }else{
-                    printf("Error no se encontro la particion\n");
-                }
-            }
-       }else{
-            printf("Error no se encontro el disco\n");
-        }
-    }else{
-        printf("Error no se encontro el mismo id montada\n");
-    }
-}
-
-void crearSB(string path, string id){
-    bool comprobar =false;
-    nodoMount *aux = ListaM->primero;
-    if (aux->id == id){
-        comprobar = true;
-    }else{
-        while (aux != nullptr){
-            if (aux->id == id){
-                comprobar = true;
-                break;
-            }
-            aux = aux->sig;
-        }
-    }
-    if(comprobar){
-        FILE *archivo;
-        if(archivo =fopen((aux->path).c_str(),"rb+")){
-            Disco master;
-            int NParticion = -1;
-            int NParticionE = -1;
-            fseek(archivo, 0, SEEK_SET);
-            fread(&master, sizeof(Disco), 1, archivo);
-
-            ofstream file;
-            comprobarRuta(path);
-            file.open("./reportes/reporte.dot",ios::out);
-            if(file.fail()){
-                cout<<"Error no se pudo abrir el archivo";
-                exit(1);
-            }
-            for (int i = 0; i < 4; i++) {
-                if (strcmp(master.particiones[i].p_nombre, (aux->nombre).c_str())==0){
-                    NParticion = i;
-                    break;
-                }
-                if (master.particiones[i].p_type == 'E'){
-                    NParticionE = i;
-                }
-            }
-            if(NParticion!=-1){
-                file<<"digraph G{\n"<<"node[shape=box]\n"<<"concentrate=true\n";
-                file<<"ReporteSB[label=<<TABLE BORDER=\"2\" CELLBORDER=\"1\" CELLSPACING=\"1\">\n";
-                file<<"<TR>\n<TD>NOMBRE</TD>\n<TD>VALOR</TD>\n</TR>";
-                SuperBloque super;
-                fseek(archivo, master.particiones[NParticion].p_comienzo, SEEK_SET);
-                fread(&super, sizeof(super), 1, archivo);
-                file<<"<TR>\n<TD>s_inodes_count</TD>\n<TD>"+to_string(super.s_inodes_count)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_blocks_count</TD>\n<TD>"+to_string(super.s_block_count)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_free_blocks_count</TD>\n<TD>"+to_string(super.s_free_blocks_count)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_free_inodes_count</TD>\n<TD>"+to_string(super.s_free_inodes_count)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_mtime</TD>\n<TD>"+obtenerFecha(super.s_mtime)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_umtime</TD>\n<TD>"+obtenerFecha(super.s_unmtime)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_mnt_count</TD>\n<TD>"+to_string(super.s_block_count)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_magic</TD>\n<TD>"+to_string(super.s_magic)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_inode_size</TD>\n<TD>"+to_string(super.s_inode_size)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_block_size</TD>\n<TD>"+to_string(super.s_block_size)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_first_ino</TD>\n<TD>"+to_string(super.s_firts_ino)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_first_blo</TD>\n<TD>"+to_string(super.s_firts_blo)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_bm_inode_start</TD>\n<TD>"+to_string(super.s_bm_inode_start)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_bm_block_start</TD>\n<TD>"+to_string(super.s_bm_block_start)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_inode_start</TD>\n<TD>"+to_string(super.s_inode_start)+"</TD>\n</TR>";
-                file<<"<TR>\n<TD>s_block_start</TD>\n<TD>"+to_string(super.s_block_start)+"</TD>\n</TR>";
-                file<<"</TABLE>>]\n}";
-                file.close();
-                string extension = "dot -T"+comprobarExtension(path)+ " ./reportes/reporte.dot-o "+path;
-                system(extension.c_str());
-                fclose(archivo);
-
-                if(archivo= fopen(path.c_str(), "rb+")){
-                    printf("Se creo correctamente el reporte sb\n");
-                    fclose(archivo);
-                }else{
-                    printf("Error al crear el reporte sb\n");
-                }
-            }else{
-                if(NParticionE != -1){
-                    ext Extendida;
-                    fseek(archivo, master.particiones[NParticionE].p_comienzo, SEEK_SET);
-                    fread(&Extendida, sizeof(ext), 1, archivo);
-                    bool comprobar2 = false;
-                    while ((ftell(archivo)<master.particiones[NParticionE].p_tam + master.particiones[NParticionE].p_comienzo)) {
-                        if (strcmp(Extendida.e_nombre, (aux->nombre).c_str())==0){
-                            comprobar2 = true;
-                            break;
-                        }
-                        if(Extendida.e_siguiente == -1){
-                            break;
-                        }
-                        fseek(archivo, Extendida.e_siguiente, SEEK_SET);
-                        fread(&Extendida, sizeof(ext), 1 , archivo);
-                    }
-                    if (comprobar2){
-                        file<<"digraph G{\n"<<"node[shape=box]\n"<<"concentrate=true\n";
-                        file<<"ReporteSB[label=<<TABLE BORDER=\"2\" CELLBORDER=\"1\" CELLSPACING=\"1\">\n";
-                        file<<"<TR>\n<TD>NOMBRE</TD>\n<TD>VALOR</TD>\n</TR>";
-                        SuperBloque super;
-                        fseek(archivo, Extendida.e_comienzo, SEEK_SET);
-                        fread(&super, sizeof(super), 1, archivo);
-                        file<<"<TR>\n<TD>s_inodes_count</TD>\n<TD>"+to_string(super.s_inodes_count)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_blocks_count</TD>\n<TD>"+to_string(super.s_block_count)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_free_blocks_count</TD>\n<TD>"+to_string(super.s_free_blocks_count)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_free_inodes_count</TD>\n<TD>"+to_string(super.s_free_inodes_count)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_mtime</TD>\n<TD>"+obtenerFecha(super.s_mtime)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_umtime</TD>\n<TD>"+obtenerFecha(super.s_unmtime)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_mnt_count</TD>\n<TD>"+to_string(super.s_block_count)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_magic</TD>\n<TD>"+to_string(super.s_magic)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_inode_size</TD>\n<TD>"+to_string(super.s_inode_size)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_block_size</TD>\n<TD>"+to_string(super.s_block_size)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_first_ino</TD>\n<TD>"+to_string(super.s_firts_ino)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_first_blo</TD>\n<TD>"+to_string(super.s_firts_blo)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_bm_inode_start</TD>\n<TD>"+to_string(super.s_bm_inode_start)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_bm_block_start</TD>\n<TD>"+to_string(super.s_bm_block_start)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_inode_start</TD>\n<TD>"+to_string(super.s_inode_start)+"</TD>\n</TR>";
-                        file<<"<TR>\n<TD>s_block_start</TD>\n<TD>"+to_string(super.s_block_start)+"</TD>\n</TR>";
-                        file<<"</TABLE>>]\n}";
-                        file.close();
-                        string extension = "dot -T"+comprobarExtension(path)+ " ./reportes/reporte.dot -o "+path;
-                        system(extension.c_str());
-                        fclose(archivo);
-
-                        if(archivo= fopen(path.c_str(), "rb+")){
-                            printf("Se creo correctamente el reporte sb\n");
-                            fclose(archivo);
-                        }else{
-                            printf("Error al crear el reporte sb\n");
-                        }
-                    }else{
-                        printf("Error no se encontro el disco\n");
-                    }
-                }else{
-                    printf("Error no se encontro el disco\n");
-                }
-            }
-        }
-    }else{
-        printf("Error no se encontro el mismo id montada\n");
-    }
-}
-*/
-
 int count_logica(string path, int NParticionE){
     int contar = 0;
     FILE *archivo;
@@ -1193,7 +726,274 @@ void make_tree(string pathRep, string path, string name){
     }
 }
 
+void make_inode(string pathRep, string path, string name){
+    //Obtenemos el el mbr
+    MBR master;
+    FILE *archivo = fopen((path).c_str(), "rb+");
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
 
+    //Obtenemos el superbloque
+    SuperBloque bloquesito;
+    int part_start = get_partition_start(path, name, master);
+    fseek(archivo, part_start, SEEK_SET);
+    fread(&bloquesito, sizeof(SuperBloque), 1, archivo);
+
+    //Abrimos el archivo donde escribimos el reporte
+    ofstream file;
+    file.open("./reportes/reporte.dot",ios::out);
+    if(file.fail()){
+        cout<<"Error no se pudo abrir el archivo";
+        return;
+    }
+
+    //Encabezado
+    file<<"digraph G{\n"<<"node[shape=plaintext]\n"<<"concentrate=true\n";
+
+
+    //Iteramos el bm de bloques
+    char status;
+    fseek(archivo, bloquesito.s_bm_inode_start, SEEK_SET);
+    for(int i = 0; i < bloquesito.s_inodes_count; i++){
+        fread(&status, sizeof(char), 1, archivo);
+        
+        if(status == '1'){
+            //Obtenemos el inodo
+            int start_inode = bloquesito.s_inode_start + (i * sizeof(TablaInodo));
+            TablaInodo inodo;
+            FILE *archivito = fopen((path).c_str(), "rb+");
+            fseek(archivito, start_inode, SEEK_SET);
+            fread(&inodo, sizeof(TablaInodo), 1, archivito);
+            fclose(archivito);
+
+            //Empezamos la tabla
+            file<<"Inodo" + to_string(i) + "[label=<\n";
+            file<<"<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" >\n";
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">Nombre</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">Informacion</TD>\n"<<"</TR>\n";
+
+
+            //Contenido del inodo
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_uid</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+to_string(inodo.i_uid)+"</TD>\n"<<"</TR>\n";
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_gid</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+to_string(inodo.i_gid)+"</TD>\n"<<"</TR>\n";
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_size</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+to_string(inodo.i_size)+"</TD>\n"<<"</TR>\n";
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_atime</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+get_date(inodo.i_atime)+"</TD>\n"<<"</TR>\n";
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_ctime</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+get_date(inodo.i_ctime)+"</TD>\n"<<"</TR>\n";
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_mtime</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+get_date(inodo.i_mtime)+"</TD>\n"<<"</TR>\n";
+            file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_type</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+to_string(inodo.i_type)+"</TD>\n"<<"</TR>\n";
+            for(int i = 0; i < 15; i++)
+                file<<"<TR>\n"<<"<TD COLSPAN=\"2\" BORDER = \"1\">i_block_" + to_string(i) + "</TD>\n"<<"<TD COLSPAN=\"2\" BORDER =\"1\">"+to_string(inodo.i_block[i])+"</TD>\n"<<"</TR>\n";
+
+            //Terminamos la tabla
+            file<<"</TABLE>>]\n";
+        }
+    }
+
+
+    file<<"}";
+    file.close();
+
+    //Procedemos a crear el archivo
+    string extension = "sudo dot -T " + get_extension(pathRep) + " ./reportes/reporte.dot -o " + pathRep;
+    system(extension.c_str());
+    fclose(archivo);
+
+    if(archivo= fopen(pathRep.c_str(), "rb+")){
+        printf("[Success] > Se creo correctamente el reporte inode\n");
+        fclose(archivo);
+    }else{
+        printf("[Error] > No fue posible crear el reporte bm_inode\n");
+    }
+}
+
+void graph_block(int start_inodo, string path, string pathRep){
+    //Obtenemos el inodo
+    TablaInodo inodo;
+    FILE *archivo = fopen((path).c_str(), "rb+");
+    fseek(archivo, start_inodo, SEEK_SET);
+    fread(&inodo, sizeof(TablaInodo), 1, archivo);
+    fclose(archivo);
+
+    //Ahora tenemos que escribir los punteros
+    int bloque_anterior = -1;
+    for(int i = 0; i < 15; i++){
+        if(i < 12){
+            if(inodo.i_block[i] != -1){
+                //Significa que encontramos un bloque
+                if(inodo.i_type == '0'){
+                    //Quiere decir que los bloques son de carpeta
+                    int start_block = inodo.i_block[i];
+                    //Obtenemos el bloque
+                    BloqueCarpeta carpetita;
+                    FILE *archivo = fopen((path).c_str(), "rb+");
+                    fseek(archivo, start_block, SEEK_SET);
+                    fread(&carpetita, sizeof(BloqueCarpeta), 1, archivo);
+                    fclose(archivo);
+                    //Escribimos el bloque de inodo
+                    outputfile << "\"node" << start_block << "\" [label = \"";
+                    outputfile << "<f0> BLOQUE DE CARPETA " << start_block << " |";
+                    for(int i = 0; i < 4; i++){
+                        outputfile << "<f" << i+1 << "> [" << carpetita.b_content[i].b_name << "] ---- [" << carpetita.b_content[i].b_inodo << "]";
+                        if(i < 3) outputfile << "|"; 
+                    }
+                    outputfile << "\"shape = \"record\"];" << endl;
+
+                    //Recursivamente pintamos los demas inodos
+                    for(int i = 1; i < 4; i++) {
+                        if(carpetita.b_content[i].b_inodo != -1){
+                            //Graficamos el inodo
+                            graph_block(carpetita.b_content[i].b_inodo, path, pathRep);
+                        } 
+                    }
+                } else {
+                    //Quiere decir que los bloques son de archivos
+                    int start_block = inodo.i_block[i];
+                    //Obtenemos el bloque
+                    BloqueArchivo archivito;
+                    FILE *archivo = fopen((path).c_str(), "rb+");
+                    fseek(archivo, start_block, SEEK_SET);
+                    fread(&archivito, sizeof(BloqueArchivo), 1, archivo);
+                    fclose(archivo);
+                    //Escribimos el bloque de inodo
+                    outputfile << "\"node" << start_block << "\" [label = \"";
+                    outputfile << "<f0> BLOQUE DE ARCHIVO " << start_block << " |";
+                    outputfile << "<f1> [" << archivito.b_name << "] |";
+                    outputfile << "<f2> [" << archivito.b_content << "]";
+                    outputfile << "\"shape = \"record\"];" << endl;
+                    if(bloque_anterior != -1){
+                        //Ahora tenemos que enlazar el inodo actual al bloque
+                        outputfile << "\"node" << bloque_anterior << "\":f1 -> \"node" << inodo.i_block[i] << "\":f1;" << endl;
+                    }
+                    bloque_anterior = inodo.i_block[i];
+                }
+            }
+        } else if(i == 12){
+            if(inodo.i_block[i] != -1){
+                //Primero conseguimos el bloque de apuntadores
+                int start_pointer = inodo.i_block[i];
+                //Obtenemos el bloque
+                BloqueApuntador apuntadores;
+                FILE *archivo = fopen((path).c_str(), "rb+");
+                fseek(archivo, start_pointer, SEEK_SET);
+                fread(&apuntadores, sizeof(BloqueApuntador), 1, archivo);
+                fclose(archivo);
+
+                //Escribimos el bloque de apuntadores
+                outputfile << "\"node" << start_pointer << "\" [label = \"";
+                outputfile << "<f0> BLOQUE DE APUNTADORES " << start_pointer << " |";
+                for(int i = 0; i < 16; i++){
+                    outputfile << "<f" << i+1 << "> " << apuntadores.b_pointers[i];
+                    if(i < 15) outputfile << "|"; 
+                }
+                outputfile << "\"shape = \"record\"];" << endl;
+
+                //Tenemos que iterar el bloque de apuntadores
+                for(int i = 0; i < 16; i++){
+                    if(apuntadores.b_pointers[i] != -1){
+                        //Significa que encontramos un bloque
+                        if(inodo.i_type == '0'){
+                            //Quiere decir que los bloques son de carpeta
+                            int start_block = apuntadores.b_pointers[i];
+                            //Obtenemos el bloque
+                            BloqueCarpeta carpetita;
+                            FILE *archivo = fopen((path).c_str(), "rb+");
+                            fseek(archivo, start_block, SEEK_SET);
+                            fread(&carpetita, sizeof(BloqueCarpeta), 1, archivo);
+                            fclose(archivo);
+                            //Escribimos el bloque de inodo
+                            outputfile << "\"node" << start_block << "\" [label = \"";
+                            outputfile << "<f0> BLOQUE DE CARPETA " << start_block << " |";
+                            for(int i = 0; i < 4; i++){
+                                outputfile << "<f" << i+1 << "> [" << carpetita.b_content[i].b_name << "] ---- [" << carpetita.b_content[i].b_inodo << "]";
+                                if(i < 3) outputfile << "|"; 
+                            }
+                            outputfile << "\"shape = \"record\"];" << endl;
+
+                            //Recursivamente pintamos los demas inodos
+                            for(int i = 1; i < 4; i++) {
+                                if(carpetita.b_content[i].b_inodo != -1){
+                                    //Graficamos el inodo
+                                    graph_inode(carpetita.b_content[i].b_inodo, path, pathRep);
+                                } 
+                            }
+                        } else {
+                            //Quiere decir que los bloques son de archivos
+                            int start_block = apuntadores.b_pointers[i];
+                            //Obtenemos el bloque
+                            BloqueArchivo archivito;
+                            FILE *archivo = fopen((path).c_str(), "rb+");
+                            fseek(archivo, start_block, SEEK_SET);
+                            fread(&archivito, sizeof(BloqueArchivo), 1, archivo);
+                            fclose(archivo);
+                            //Escribimos el bloque de inodo
+                            outputfile << "\"node" << start_block << "\" [label = \"";
+                            outputfile << "<f0> BLOQUE DE ARCHIVO " << start_block << " |";
+                            outputfile << "<f1> [" << archivito.b_name << "] |";
+                            outputfile << "<f2> [" << archivito.b_content << "]";
+                            outputfile << "\"shape = \"record\"];" << endl;
+                        }
+                    }
+                }
+            }
+
+
+        } else if(i == 13){
+
+        } else if(i == 14){
+
+        }
+    }
+
+}
+
+void make_block(string pathRep, string path, string name){
+    //Obtenemos el el mbr
+    MBR master;
+    FILE *archivo = fopen((path).c_str(), "rb+");
+    fseek(archivo, 0, SEEK_SET);
+    fread(&master, sizeof(MBR), 1, archivo);
+
+    //Obtenemos el superbloque
+    SuperBloque bloquesito;
+    int part_start = get_partition_start(path, name, master);
+    fseek(archivo, part_start, SEEK_SET);
+    fread(&bloquesito, sizeof(SuperBloque), 1, archivo);
+
+    //Abrimos el archivo donde escribimos el reporte
+    //ofstream file;
+    outputfile.open("./reportes/reporte.dot",ios::out);
+    if(outputfile.fail()){
+        cout<<"Error no se pudo abrir el archivo";
+        return;
+    }
+
+    //Encabezado
+    outputfile << "digraph g {" << endl;
+    outputfile << "fontname=\"Helvetica,Arial,sans-serif\"" << endl;
+    outputfile << "node [fontname=\"Helvetica,Arial,sans-serif\"]" << endl;
+    outputfile << "edge [fontname=\"Helvetica,Arial,sans-serif\"]" << endl;
+    outputfile << "graph [rankdir = \"LR\"];" << endl;
+    outputfile << "node [fontsize = \"16\" shape = \"ellipse\"];" << endl;
+    outputfile << "edge [];" << endl;
+
+    //Ahora tenemos que iterar todos los inodos desde el principio jajaja, que dios me ayude
+    graph_block(bloquesito.s_inode_start, path, pathRep);
+
+    //Terminamos la tabla
+    outputfile << "}";
+    outputfile.close();
+
+    //Procedemos a crear el archivo
+    string extension = "sudo dot -T " + get_extension(pathRep) + " ./reportes/reporte.dot -o " + pathRep;
+    system(extension.c_str());
+    fclose(archivo);
+
+    if(archivo= fopen(pathRep.c_str(), "rb+")){
+        printf("[Success] > Se creo correctamente el reporte tree\n");
+        fclose(archivo);
+    }else{
+        printf("[Error] > No fue posible crear el reporte tree\n");
+    }
+}
 
 
 
@@ -1226,11 +1026,11 @@ void rep::make_rep(rep *reportito){
         //Revisamos que tipo de reporte es
         transform(reportito->name.begin(), reportito->name.end(), reportito->name.begin(), ::toupper);
         //Verificamos si la ruta existe, si no creamos las carpetas
-        /*string rutaCarpeta = Carpeta;
-        if( access( rutaCarpeta.c_str(), F_OK ) == -1 ) {
-            string cmd = "mkdir -p \"" + rutaCarpeta + "\"";
+        string path_without_name = get_path_without_name(reportito->path);
+        if( access( path_without_name.c_str(), F_OK ) == -1 ) {
+            string cmd = "mkdir -p \"" + path_without_name + "\"";
             system(cmd.c_str());
-        }*/
+        }
 
         if (reportito->name == "MBR"){
             make_mbr(reportito->path, realPath);
@@ -1244,6 +1044,10 @@ void rep::make_rep(rep *reportito){
             make_sb(reportito->path, realPath, nodo->nombre);
         }else if (reportito->name == "TREE"){
             make_tree(reportito->path, realPath, nodo->nombre);
+        }else if (reportito->name == "INODE"){
+            make_inode(reportito->path, realPath, nodo->nombre);
+        }else if (reportito->name == "BLOCK"){
+            make_block(reportito->path, realPath, nodo->nombre);
         }/*else if (reportito->name == "INODE"){
             crearINODE(realPath, id);
         }else if (reportito->name == "BLOCK"){

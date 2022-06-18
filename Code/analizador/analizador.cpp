@@ -93,6 +93,7 @@ string get_path_without_name(string path){
     return path_without_name;
 }
 
+
 /*Funcion para analizar el comando de mkdisk*/
 void analizar_mkdisk(char *parametros){
     //Pasamos a la siguiente posicion
