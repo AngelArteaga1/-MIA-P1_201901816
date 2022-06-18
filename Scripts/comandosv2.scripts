@@ -1,5 +1,13 @@
-Mkdisk $size=>96 $path=>"/home/angel/Documentos/Disquitos/" $name=>Disco_1.dsk
+Mkdisk $size=>64 $path=>"/home/angel/Documentos/Disquitos/" $name=>Disco_1.dsk
 fdisk $sizE=>15 @unit=>M $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
 mount $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
 MkfS $id=>vda1 @type=>fast
 mkFile @SIZE=>15 $id=>vda1 $PatH=>"/home/user/docs/a.txt" @p @cont=>"/home/angel/Github/-MIA-P1_201901816/Cont/contenido.txt"
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte1.png" $name=>MBR
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte2.png" $name=>DISK
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte3.png" $name=>Bm_block
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte4.png" $name=>BM_Inode
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte5.png" $name=>sb
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte6.png" $name=>tree
+
+

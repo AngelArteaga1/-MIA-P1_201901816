@@ -10,6 +10,7 @@
 #include "../unmount/unmount.h"
 #include "../mkfs/mkfs.h"
 #include "../mkfile/mkfile.h"
+#include "../rep/rep.h"
 
 /*Funcion para saber si la cadena es aceptada como nombre*/
 bool verify_name(string name){
@@ -77,6 +78,18 @@ string get_path_raid(string path){
         path_raid += caracter;
     }
     return path_raid;
+}
+/*Funcion para devolver el path sin la ruta*/
+string get_path_without_name(string path){
+    string path_without_name = "";
+    string tmp = "";
+    for(int i = 0; i < path.length(); i++){
+        //Verificamos si el nombre es alfanumerico y con _
+        char caracter = path.at(i);
+        tmp += caracter;
+        if(caracter == '/') path_without_name = tmp;
+    }
+    return path_without_name;
 }
 
 /*Funcion para analizar el comando de mkdisk*/
@@ -296,6 +309,31 @@ void analizar_mkfile(char *parametros){
     //Creamos la particion
     mkfilesito->make_mkfile(mkfilesito);
 }
+/*Funcion para analizar el comando de mkfile*/
+void analizar_rep(char *parametros){
+    //Pasamos a la siguiente posicion
+    parametros = strtok(NULL, " ");
+    //Inicializamos nuestro disco
+    rep *reportito = new rep();
+    while(parametros != NULL){
+        //Obtenemos el tipo y el valor del parametro actual
+        string tmpParam = parametros;
+        string tipo = get_tipo_parametro(tmpParam);
+        string valor = get_valor_parametro(tmpParam);
+        //Verificamos cual parametro es para inicializar el objeto (los parametros ya vienen en lowercase)
+        if(tipo == "$name"){
+            reportito->name = valor;
+        } else if (tipo == "$path"){
+            valor = delete_comillas(valor);
+            reportito->path = valor;
+        } else if (tipo == "$id"){
+            reportito->id = valor;
+        }
+        parametros = strtok(NULL, " ");
+    }
+    //Creamos la particion
+    reportito->make_rep(reportito);
+}
 
 
 /*Funcion que define que comando es el que hay que ejecutar*/
@@ -317,6 +355,8 @@ void analizar(char *comando) {
         analizar_mkfs(token);
     } else if (strcasecmp(token, "mkfile") == 0){
         analizar_mkfile(token);
+    } else if (strcasecmp(token, "rep") == 0){
+        analizar_rep(token);
     } else {
         cout << "Comando no aceptado :c" << endl;
     }

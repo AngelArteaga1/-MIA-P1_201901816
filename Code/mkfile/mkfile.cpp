@@ -1060,7 +1060,7 @@ int make_path_file(int inodo_start, SuperBloque bloquesito, char fit, char * tok
         fseek(archivo, posicion_inodito, SEEK_SET);
         fread(&inodito, sizeof(TablaInodo), 1, archivo);
     }
-    inodito.i_type = 1;
+    inodito.i_type = '1';
     //Llenamos de -1 todas las posiciones
     for(int i = 0; i < 15; i ++)
         inodito.i_block[i] = -1;

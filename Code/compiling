@@ -10,4 +10,6 @@ c++ \
     ./unmount/unmount.cpp \
     ./mkfs/mkfs.cpp \
     ./mkfile/mkfile.cpp \
--o run
+    ./rep/rep.cpp \
+-o run \
+-fno-stack-protector
