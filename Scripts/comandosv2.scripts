@@ -1,22 +1,166 @@
-Mkdisk $size=>64 $path=>"/home/angel/Documentos/Disquitos/" $name=>Disco_1.dsk
-Mkdisk $size=>64 $path=>"/home/angel/Documentos/mis discos bro/" $name=>Disco_1.dsk
-fdisk $sizE=>15 @unit=>M $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
-mount $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
-MkfS $id=>vda1 @type=>fast
+/*Debería generar los ids: vda1, vdb1, vda2, vdb2, vda3, vdb3*/
+/*vda para el D3.dsk y vdb para d1.dsk*/
+mouNt $NamE=>PRI1  $path=>"/home/angel/archivos/fase1/D3.dsk"
+mouNt $path=>"/home/angel/archivos/fase1/D1.dsk" $NamE=>PRI1
+moUnt $PAth=>"/home/angel/archivos/fase1/D3.dsk" $name=>PRI2
+moUnt $name=>PRI2 $PAth=>"/home/angel/archivos/fase1/D1.dsk"
+mOunt $name=>LOG1 $path=>"/home/angel/archivos/fase1/D3.dsk"
+mouNt $path=>"/home/angel/archivos/fase1/D1.dsk" $name=>LOG1
+mount
+pause
 
-mkFile @SIZE=>15 $id=>vda1 $PatH=>"/home/user/docs/a.txt" @p @cont=>"/home/angel/Github/-MIA-P1_201901816/Cont/contenido.txt"
-Mkdir $id=>vda1 $path=>"/home/user/docs/usac"
-Mkdir $id=>vda1 $path=>"/home/comida/hola" @p
-Mkdir $id=>vda1 $path=>"/home/people"
-mkFile @SIZE=>15 $id=>vda1 $PatH=>"/home/angel/arti/listado.txt" @p @cont=>"/home/angel/Github/-MIA-P1_201901816/Cont/contenido2.txt"
+/*Crea el sistema de archivos EXT3 en todas las particiones primarias PRI1*/ 
+mkfs $id=>vda1 @type=>Full 
+Mkfs $id=>vdb1 
+/*Crea el sistema de archivos EXT3 en todas las particiones Logicas*/
+mkfs $id=>vda3 @type=>Full 
+Mkfs $id=>vdb3 @type=>FasT
+pause
 
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte1.png" $name=>MBR
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte2.png" $name=>DISK
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte3.png" $name=>Bm_block
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte4.png" $name=>BM_Inode
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte5.png" $name=>sb
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte6.png" $name=>tree
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte7.png" $name=>inode
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte8.png" $name=>block
-rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte9.png" @ruta=>"/home/user/docs/a.txt" $name=>file
+/*Crearemos la ruta y las padres que no existan
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta3/carpeta7/carpeta8/carpeta9/carpeta10/carpeta11" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta4/carpeta7/carpeta8/carpeta9/carpeta10/carpeta11/carpeta7/carpeta8/carpeta9/carpeta10/carpeta11" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a1"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a2"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a3"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a4"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a5"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a6"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a7"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a8"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a9"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a10"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a1"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a2"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a3"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a4"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a5"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a6"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a7"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a8"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a9"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a10"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a11"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a12"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a13"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a14"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a15"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a16"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a17"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a18"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a19"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a20"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a21"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a22"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a23"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a24"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a25"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a26"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a27"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a28"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a29"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a30"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a31"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a32"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a33"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a34"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a35"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a36"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a37"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a38"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a39"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a40"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a41"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a42"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a43"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a44"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a45"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a46"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a47"
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a48"
+pause
 
+
+/*Validar que no cree dos veces el mismo directorio*/
+/*mkdir $id=>vda1 $path=>"/home/user/mia/fase1/c16"*/
+/*mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a10"*/
+/*mkdir $id=>vda1 $path=>"/home/user/mia/fase1/a12"*/
+/*mkdir $id=>vda1 $path=>"/home/user/mia/fase1/b60"*/
+
+
+
+rep $nAmE=>bm_inode $Path=>"/home/archivos/reportes/bm_inode01.jpg" $id=>vda1
+rep $NaMe=>bm_block $Path=>"/home/archivos/reportes/bm_block01.jpg" $id=>vda1
+rep $NAMe=>sb $patH=>"/home/archivos/reportes/sb01.txt" $id=>vda1
+rep $NamE=>bitacora $patH=>"/home/archivos/reportes/bitacora01.jpg" $id=>vda1
+rep $NAME=>tree $patH=>"/home/archivos/reportes/directorio01UsoApuntadoresCarpetas.jpg" $id=>vda1
+/*uso de bloques e inodos*/
+pause
+
+
+/*Archivo*/ 
+mkfile $id=>vda3 $path=>"/home/b1.txt" $size=>767
+/*Archivo*/
+mkfile $id=>vda3 $path=>"/home/a1.txt" $size=>767
+pause
+
+/*Crearemos la ruta y las padres que no existan
+mkdir $id=>vda3 $path=>"/home/user/mia/fase1" @p
+mkdir $id=>vda3 $path=>"/home/user/mia/carpeta2" @p
+mkdir $id=>vda3 $path=>"/home/user/mia/carpeta3" @p
+mkdir $id=>vda3 $path=>"/home/user/mia/carpeta4" @p
+pause
+
+
+/*Archivo*/
+mkfile $id=>vda3 $path=>"/home/user/mia/fase1/fase1.txt" $size=>18175
+/*Archivo*/
+mkfile $id=>vda3 $path=>"/home/user/mia/fase1/a1.txt" $size=>767
+/*Archivo*/
+/*Utiliza */
+mkfile $id=>vda3 $path=>"/home/user/mia/fase1/a2.txt" $size=>1791
+/*Archivo */
+/*Utiliza */
+mkfile $id=>vda3 $path=>"/home/user/mia/fase1/a3.txt" $size=>18175
+/*Archivo */
+/*Utiliza */
+mkfile $id=>vda3 $path=>"/home/user/mia/fase1/a4.txt" $size=>280319
+/*Archivo */
+/*Utiliza n cantidad bloques aproximadamente*/
+mkfile $id=>vda3 $path=>"/home/user/mia/fase1/a5.txt" $size=>280319
+pause
+
+/*generamos el reporte tree para ver el uso de apuntadores*/
+rep $NamE=>tree $Path=>"/home/angel/reportes/treeUsoApuntadoresArchivos03.png" $id=>vda3
+/*uso de bloques e inodos*/
+rep $NamE=>inode $Path=>"/home/angel/reportes/inodeArchivos03.png" $id=>vda3
+rep $NamE=>block $Path=>"/home/angel/reportes/blockArchivos03.png" $id=>vda3
+pause
+
+/*Crear archivo con contenido, pegar fase1.txt en la carpeta archivos*/
+/*mkfile $id=>vda3 $path=>"/home/angel/mia/fase1/a6.txt"*/
+/*vamos a ver el archivo user.txt en el reporte file*/
+rep $NamE=>file $Path=>"file02A6.txt" $id=>vda1 @ruta=>"/home/angel/mia/fase1/a6.txt"
+pause
+
+
+rep $name=>tree $Path=>"/home/angel/reportes/tree05reporteRM.png" $id=>vda3
+
+
+rep $NAME=>tree $Path=>"/home/angel/reportes/treecopy1.png" $id=>vda1
+
+rep $NAME=>tree $Path=>"/home/angel/reportes/treemove1.png" $id=>vda1
+
+rep $name=>bm_inode $Path=>"/home/angel/archivos/reportes/bm_inodeLOSS01.txt" $id=>vda1
+rep $name=>bm_block $Path=>"/home/angel/archivos/reportes/bm_blockLOSS01.txt" $id=>vda1
+rep $NaMe=>sb $patH=>"/home/angel/archivos/reportes/sb01.txt" $id=>vda1
+rep $name=>tree $patH=>"/home/angel/archivos/reportes/directorioLOSS01.txt" $id=>vda1
+/*uso de bloques e inodos*/
+
+rep $name=>bm_inode $Path=>"/home/angel/archivos/reportes/bm_inodeLOSS01.txt" $id=>vda1
+rep $name=>bm_block $Path=>"/home/angel/archivos/reportes/bm_blockLOSS01.txt" $id=>vda1
+rep $NaMe=>sb $patH=>"/home/angel/archivos/reportes/sb01.txt" $id=>vda1
+rep $name=>tree $patH=>"/home/angel/archivos/reportes/directorioLOSS01.txt" $id=>vda1
+/*uso de bloques e inodos*/

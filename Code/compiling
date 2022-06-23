@@ -12,4 +12,5 @@ c++ \
     ./mkfile/mkfile.cpp \
     ./mkdir/mkdir.cpp \
     ./rep/rep.cpp \
+    ./syncronice/syncronice.cpp \
 -o run

@@ -12,6 +12,7 @@
 #include "../mkfile/mkfile.h"
 #include "../mkdir/mkdir.h"
 #include "../rep/rep.h"
+#include "../syncronice/syncronice.h"
 
 /*Funcion para saber si la cadena es aceptada como nombre*/
 bool verify_name(string name){
@@ -530,6 +531,47 @@ void analizar_rep(char *parametros){
     //Creamos la particion
     reportito->make_rep(reportito);
 }
+/*Funcion para analizar el comando de mkfile*/
+void analizar_syncronice(char *parametros){
+    //Pasamos a la siguiente posicion
+    parametros = strtok(NULL, " ");
+    //Inicializamos nuestro disco
+    syncronice *sincronito = new syncronice();
+    string path = "";
+    bool leyendoPath = false;
+    while(parametros != NULL){
+        //Obtenemos el tipo y el valor del parametro actual
+        string tmpParam = parametros;
+        string tipo = get_tipo_parametro(tmpParam);
+        string valor = get_valor_parametro(tmpParam);
+        //Verificamos cual parametro es para inicializar el objeto (los parametros ya vienen en lowercase)
+        if(tipo == "@id"){
+            sincronito->id = valor;
+        } else if (tipo == "@path"){
+            if(is_complete_path(valor)){
+                valor = delete_comillas(valor);
+                sincronito->path = valor;
+            } else {
+                path += valor;
+                leyendoPath = true;
+            }
+        } else if (leyendoPath){
+            string partPath = parametros;
+            if(is_complete_path(partPath)){
+                path += " " + partPath;
+                leyendoPath = false;
+                path = delete_comillas(path);
+                sincronito->path = path;
+            } else {
+                path += " " + partPath;
+            }
+        }
+        parametros = strtok(NULL, " ");
+    }
+    //Creamos el archivo json
+    sincronito->make_syncronice(sincronito);
+}
+
 
 
 /*Funcion que define que comando es el que hay que ejecutar*/
@@ -555,6 +597,8 @@ void analizar(char *comando) {
         analizar_mkdir(token);
     } else if (strcasecmp(token, "rep") == 0){
         analizar_rep(token);
+    } else if (strcasecmp(token, "syncronice") == 0){
+        analizar_syncronice(token);
     } else {
         //cout << "Comando no aceptado :c" << endl;
     }
