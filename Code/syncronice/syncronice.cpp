@@ -36,6 +36,19 @@ string get_dir_name(int start_first_block, string path){
     return s;
 }
 
+string get_file_name(int start_first_block, string path){
+    //Obtenemos el bloque
+    BloqueArchivo archivito;
+    FILE *archivo = fopen((path).c_str(), "rb+");
+    fseek(archivo, start_first_block, SEEK_SET);
+    fread(&archivito, sizeof(BloqueArchivo), 1, archivo);
+    fclose(archivo);
+
+    //Devolvemos el primer nombre ya que es el del padre
+    string s(archivito.b_name);
+    return s;
+}
+
 void convert_inode(int start_inodo, string path){
     //Obtenemos el inodo
     TablaInodo inodo;
@@ -50,11 +63,14 @@ void convert_inode(int start_inodo, string path){
         //Es un inodo de carpeta
         string nombre_carpeta = get_dir_name(inodo.i_block[0], path);
         char type = inodo.i_type;
+        int size = inodo.i_size;
+
 
         //Escribimos el objeto
         outputjson << "\"name\": \"" << nombre_carpeta << "\"," << endl; 
         outputjson << "\"type\": \"" << type << "\"," << endl; 
-        outputjson << "\"sons:\": [" << endl; 
+        outputjson << "\"size\": \"" << size << "\"," << endl; 
+        outputjson << "\"sons\": [" << endl; 
 
         //Ahora los hijos
         for(int i = 0; i < 15; i++){
@@ -87,10 +103,37 @@ void convert_inode(int start_inodo, string path){
                 }
             }
         }
-        outputjson << "]" << endl;
+        outputjson << "]," << endl;
+        outputjson << "\"content\": \"\"" << endl; 
     } else {
         //Es un inodo de archivo
-        
+
+        string nombre_archivo = get_file_name(inodo.i_block[0], path);
+        char type = inodo.i_type;
+        int size = inodo.i_size;
+
+        outputjson << "\"name\": \"" << nombre_archivo << "\"," << endl; 
+        outputjson << "\"type\": \"" << type << "\"," << endl; 
+        outputjson << "\"size\": \"" << size << "\"," << endl; 
+        outputjson << "\"sons\": []," << endl; 
+        outputjson << "\"content\": \""; 
+        //Ahora el content
+        for(int i = 0; i < 15; i++){
+            if(i < 12){
+                if(inodo.i_block[i] != -1){
+                    //Escribimos los hijos
+                    //Primero obtenemos el bloque 
+                    BloqueArchivo archivito;
+                    archivo = fopen((path).c_str(), "rb+");
+                    fseek(archivo, inodo.i_block[i], SEEK_SET);
+                    fread(&archivito, sizeof(BloqueArchivo), 1, archivo);
+                    fclose(archivo);
+                    //Ahora solo escribimos la informacion
+                    outputjson << archivito.b_content;
+                }
+            }
+        }
+        outputjson << "\"" << endl; 
     }
     outputjson << "}";
 }
