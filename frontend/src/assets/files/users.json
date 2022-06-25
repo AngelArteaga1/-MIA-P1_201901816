@@ -7,8 +7,8 @@
         "numero" : "42455873",
         "password" : "ArteGar0301",
         "confirmPassword" : "ArteGar0301",
-        "nacimiento" : "03/01/2001",
-        "fecha" : "24/06/2022",
+        "nacimiento" : "2001-01-03T05:48:48.921Z",
+        "fecha" : "2022-06-25T05:48:48.921Z",
         "administrador" : true,
         "status" : true
     }
