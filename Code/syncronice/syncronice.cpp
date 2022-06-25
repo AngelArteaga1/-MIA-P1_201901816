@@ -162,14 +162,8 @@ void make_json(string pathJson, string path, string name){
         return;
     }
 
-    //Empezamos el formato json
-    outputjson << "{" << endl;
-
     //Ahora tenemos que iterar todos los inodos desde el principio jajaja, que dios me ayude
     convert_inode(bloquesito.s_inode_start, path);
-
-    //Terminamos el formato json
-    outputjson << "}";
     outputjson.close();
 
 

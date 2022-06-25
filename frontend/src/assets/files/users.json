@@ -1,0 +1,15 @@
+[
+    {
+        "nombre" : "Administrador",
+        "apellido" : "MIA",
+        "username" : "admin",
+        "email" : "angel.arteaga01.aa@gmail.com",
+        "numero" : "42455873",
+        "password" : "ArteGar0301",
+        "confirmPassword" : "ArteGar0301",
+        "nacimiento" : "03/01/2001",
+        "fecha" : "24/06/2022",
+        "administrador" : true,
+        "status" : true
+    }
+]
