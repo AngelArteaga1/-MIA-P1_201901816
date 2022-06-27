@@ -1,0 +1,44 @@
+<br>
+<h2 class="text-center">Listado de Usuarios</h2>
+<br>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Apellido</th>
+            <th scope="col">Fecha de crecion</th>
+            <th scope="col">Correo</th>
+            <th scope="col">Admin</th>
+            <th scope="col">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let user of users; index as i; first as isFirst">
+            <th scope="row">{{i}}</th>
+            <td>{{user.nombre}}</td>
+            <td>{{user.apellido}}</td>
+            <td>{{user.fecha}}</td>
+            <td>{{user.email}}</td>
+            <td>
+                <div *ngIf="user.administrador == true; then thenBlock else elseBlock"></div>
+                <ng-template #thenBlock>
+                    <input class="form-check-input ml-3 " type="checkbox" value="" checked disabled>
+                </ng-template>
+                <ng-template #elseBlock>
+                    <input class="form-check-input ml-3 " type="checkbox" value="" disabled>
+                </ng-template>
+            </td>
+            <td>
+                <div *ngIf="user.status == true; then thenStatus else elseStatus"></div>
+                <ng-template #thenStatus>
+                    <input class="form-check-input ml-3 " [id]="user.username" type="checkbox" [value]="user.status" (change)="changeStatus($event)" checked>
+                </ng-template>
+                <ng-template #elseStatus>
+                    <input class="form-check-input ml-3 " [id]="user.username" type="checkbox" [value]="user.status" (change)="changeStatus($event)">
+                </ng-template>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<br>

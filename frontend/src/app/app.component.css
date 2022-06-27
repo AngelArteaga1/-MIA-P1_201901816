@@ -32,7 +32,7 @@
     height: 60px;
     display: flex;
     align-items: center;
-    background-color: #1976d2;
+    background-color: #742aa7;
     color: white;
     font-weight: 600;
   }
@@ -125,7 +125,7 @@
   }
 
   .card.highlight-card {
-    background-color: #1976d2;
+    background-color: #525d71;
     color: white;
     font-weight: 600;
     border: none;

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-tree',
@@ -7,9 +8,11 @@ import { Component, OnInit } from '@angular/core';
 })
 export class TreeComponent implements OnInit {
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
+    //Verificando si ya esta logeado
+    if(localStorage.getItem('logeado') == 'false'){this.router.navigate(['/login']);}
   }
 
 }

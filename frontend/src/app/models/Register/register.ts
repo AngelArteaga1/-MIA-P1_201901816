@@ -9,6 +9,7 @@ export class Register {
         public confirmPassword: string,
         public nacimiento: Date,
         public fecha: Date,
+        public recover: Date,
         public administrador: boolean,
         public status: boolean
     ) {}

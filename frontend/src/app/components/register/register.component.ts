@@ -13,7 +13,7 @@ export class RegisterComponent implements OnInit {
   
   constructor(private router: Router) { }
 
-  registerModel = new Register('', '', '', '', '', '', '', new Date(0), new Date(), false, false);
+  registerModel = new Register('', '', '', '', '', '', '', new Date(0), new Date(), new Date(0), false, false);
   errorMessage = "";
   error = false;
 
@@ -148,13 +148,11 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(){
+    //Primero validamos los campos
+    if(!this.validate()){ return; }
+
     //Otenemos el listado de usuarios
     let data = JSON.parse(localStorage.getItem("usuarios") || '{}');
-
-    //Primero validamos los campos
-    if(!this.validate()){
-      return;
-    }
 
     //Tenemos que iterar la lista
     for(let i = 0; i < data.length; i++){
@@ -162,15 +160,23 @@ export class RegisterComponent implements OnInit {
       let user = data[i];
       if(user.email == this.registerModel.email){
           //Ingresamos el usuario en el localstorage
-          this.errorMessage = "Error: Ya existe ese usuario"
+          this.errorMessage = "Error: Ya existe un usuario con ese email"
           this.error = true;
           return;
       }
+      if(user.username == this.registerModel.username){
+        //Ingresamos el usuario en el localstorage
+        this.errorMessage = "Error: Ya existe un usuario con ese username"
+        this.error = true;
+        return;
+    }
     }
     //Agregamos el usuario
     data.push(this.registerModel);
     //Actualizamos la tabla de usuarios
     localStorage.setItem("usuarios", JSON.stringify(data));
+    //Redireccionamos a la pagina de confirmacion
+    this.router.navigate(['/registerConfirm']);
   }
 
 }

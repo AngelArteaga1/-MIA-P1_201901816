@@ -10,6 +10,9 @@
         <div *ngIf="error" class="alert alert-danger" role="alert">
             {{errorMessage}}
         </div>
+        <div *ngIf="success" class="alert alert-success" role="alert">
+          {{successMessage}}
+        </div>
         <form #loginForm="ngForm" (ngSubmit)="onSubmit()" novalidate>
             <div class="form-group">
               <label for="exampleInputEmail1">Direccion Email</label>
@@ -22,8 +25,11 @@
               <input name="password" type="password" class="form-control" id="exampleInputPassword1" 
               placeholder="Contraseña" [(ngModel)]="loginModel.password">
             </div>
-            <button type="submit" class="btn btn-primary mr-2">Iniciar Sesion</button>
-            <button class="btn btn-info" (click)="redirectToRegister()">Registrate gratis</button>
+            <div class="text-right">
+              <button type="submit" class="btn btn-primary mr-2">Iniciar Sesion</button>
+              <button type="button" class="btn btn-info mr-2" (click)="redirectToRegister()">Registrarse</button>
+              <button type="button" class="btn btn-danger" (click)="recoverPassword()">Recuperar contraseña</button>
+            </div>
         </form>
     </div>
   </div>
