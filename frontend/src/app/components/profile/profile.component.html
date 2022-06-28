@@ -1,0 +1,81 @@
+<br>
+
+<div class="card border-primary mb-3">
+    <div class="card-header">
+        <h3 class="text-center text-primary">Perfil de Usuario</h3>
+    </div>
+    <div class="card-body">
+        <div *ngIf="error" class="alert alert-danger" role="alert">
+            {{errorMessage}}
+        </div>
+        <form #loginForm="ngForm" (ngSubmit)="onSubmit()" novalidate>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        <input name="nombre" #name="ngModel" type="text" class="form-control"
+                        aria-describedby="emailHelp" placeholder="Ingresa tu nombre" [(ngModel)]="registerModel.nombre">
+                      </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="apellido">Apellido</label>
+                        <input name="apellido" #name="ngModel" type="text" class="form-control"
+                        aria-describedby="emailHelp" placeholder="Ingresa tu apellido" [(ngModel)]="registerModel.apellido">
+                      </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input name="username" #name="ngModel" type="text" class="form-control" readonly
+                        aria-describedby="emailHelp" placeholder="Ingresa tu username" [(ngModel)]="registerModel.username">
+                      </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="numero">Telefono</label>
+                        <input name="numero" #name="ngModel" type="tel" class="form-control"
+                        aria-describedby="emailHelp" placeholder="Ingresa tu telefono" [(ngModel)]="registerModel.numero">
+                      </div>
+                </div>
+            </div>
+            <div class="form-group">
+              <label for="exampleInputEmail1">Direccion Email</label>
+              <input name="email" #name="ngModel" type="email" class="form-control" readonly
+              aria-describedby="emailHelp" placeholder="Ingresa tu email" [(ngModel)]="registerModel.email">
+              <small id="emailHelp" class="form-text text-muted">Nunca compartiremos tu email con alguien mas.</small>
+            </div>
+            <div class="form-group">
+                <label for="nacimiento">Fecha de Nacimiento</label>
+                <input name="nacimiento" #name="ngModel" type="date" class="form-control" 
+                aria-describedby="emailHelp" placeholder="Ingresa tu nacimiento" [(ngModel)]="registerModel.nacimiento">
+              </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input name="password" type="password" class="form-control"
+                        placeholder="Ingresa tu contraseña" [(ngModel)]="registerModel.password">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirma Contraseña</label>
+                        <input name="confirmPassword" type="password" class="form-control"
+                        placeholder="Ingresa tu contraseña" [(ngModel)]="registerModel.confirmPassword">
+                    </div>
+                </div>
+            </div>
+            <div class="form-check">
+                <input name="administrador" type="checkbox" class="form-check-input" id="exampleCheck1" disabled [(ngModel)]="registerModel.administrador">
+                <label class="form-check-label" for="administrador">Administrador</label>
+            </div>
+            <div class="text-right">
+                <button type="submit" class="btn btn-primary mr-2">Guardar Cambios</button>
+            </div>
+
+        </form>
+    </div>
+  </div>

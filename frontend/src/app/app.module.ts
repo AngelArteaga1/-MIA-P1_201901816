@@ -11,6 +11,9 @@ import { RegisterComponent } from './components/register/register.component';
 import { UsersComponent } from './components/users/users.component';
 import { RegisterConfirmComponent } from './components/register-confirm/register-confirm.component';
 import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
+import { RecoverConfirmComponent } from './components/recover-confirm/recover-confirm.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { ProfileComponent } from './components/profile/profile.component';
 
 @NgModule({
   declarations: [
@@ -20,13 +23,16 @@ import { RecoverPasswordComponent } from './components/recover-password/recover-
     RegisterComponent,
     UsersComponent,
     RegisterConfirmComponent,
-    RecoverPasswordComponent
+    RecoverPasswordComponent,
+    RecoverConfirmComponent,
+    ProfileComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    FontAwesomeModule
   ],
   providers: [],
   bootstrap: [AppComponent]

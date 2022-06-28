@@ -6,9 +6,8 @@ import { RegisterComponent } from './components/register/register.component';
 import { UsersComponent } from './components/users/users.component';
 import { RegisterConfirmComponent } from './components/register-confirm/register-confirm.component';
 import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
-
-
-
+import { RecoverConfirmComponent } from './components/recover-confirm/recover-confirm.component';
+import { ProfileComponent } from './components/profile/profile.component';
 
 const routes: Routes = [
   { path: '', component: TreeComponent },
@@ -16,7 +15,9 @@ const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'users', component: UsersComponent },
   { path: 'registerConfirm', component: RegisterConfirmComponent },
-  { path: 'recoverPassword/:id', component: RecoverPasswordComponent }
+  { path: 'recoverPassword/:id', component: RecoverPasswordComponent },
+  { path: 'recoverConfirm', component: RecoverConfirmComponent },
+  { path: 'profile/:username', component: ProfileComponent }
 ];
 
 @NgModule({

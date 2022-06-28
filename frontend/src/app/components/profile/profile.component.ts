@@ -1,21 +1,47 @@
 import { Component, OnInit } from '@angular/core';
 import { Register } from 'src/app/models/Register/register';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css']
+  selector: 'app-profile',
+  templateUrl: './profile.component.html',
+  styleUrls: ['./profile.component.css']
 })
-export class RegisterComponent implements OnInit {
-  
-  constructor(private router: Router) { }
+export class ProfileComponent implements OnInit {
 
+  sub:any;
   registerModel = new Register('', '', '', '', '', '', '', new Date(0), new Date(), new Date(0), false, false);
   errorMessage = "";
   error = false;
+  username = '';
+
+  constructor(private _Activatedroute:ActivatedRoute, private router: Router) { }
 
   ngOnInit(): void {
+    this.sub=this._Activatedroute.paramMap.subscribe(params => { 
+      this.username = params.get('username') || ''; 
+      //Ahora tenemos que buscar el usuario
+      //Otenemos el listado de usuarios
+      let data = JSON.parse(localStorage.getItem("usuarios") || '{}');
+      //Iteramos el listado
+      for(let i = 0; i < data.length; i++){
+        //Tenemos que verificar si existe el usuario
+        let user = data[i];
+        if(user.username == this.username){
+          //Significa que encontramos el usuario
+          this.registerModel.nombre = user.nombre;
+          this.registerModel.apellido = user.apellido;
+          this.registerModel.username = user.username;
+          this.registerModel.numero = user.numero;
+          this.registerModel.email = user.email;
+          this.registerModel.nacimiento = user.nacimiento.split('T')[0];
+          console.log(user.nacimiento);
+          console.log(this.registerModel.nacimiento);
+          this.registerModel.password = user.password;
+          this.registerModel.confirmPassword = user.confirmPassword;
+        }
+      }
+    });
   }
 
   public isNumber(char: string): boolean{
@@ -156,25 +182,23 @@ export class RegisterComponent implements OnInit {
     for(let i = 0; i < data.length; i++){
       //Tenemos que verificar si existe el usuario
       let user = data[i];
-      if(user.email == this.registerModel.email){
-          //Ingresamos el usuario en el localstorage
-          this.errorMessage = "Error: Ya existe un usuario con ese email"
-          this.error = true;
-          return;
-      }
-      if(user.username == this.registerModel.username){
-        //Ingresamos el usuario en el localstorage
-        this.errorMessage = "Error: Ya existe un usuario con ese username"
-        this.error = true;
+      if(user.username == this.username){
+        //Ahora actualizamos el user
+        data[i].nombre = this.registerModel.nombre;
+        data[i].apellido = this.registerModel.apellido;
+        data[i].numero = this.registerModel.numero;
+        data[i].nacimiento = this.registerModel.nacimiento;
+        data[i].password = this.registerModel.password;
+        data[i].passwordConfirm = this.registerModel.confirmPassword;
+        //Ahora actualizamos el listado de usuarios
+        localStorage.setItem('usuarios', JSON.stringify(data));
+        this.router.navigate(['/registerConfirm']);
         return;
+      }
     }
-    }
-    //Agregamos el usuario
-    data.push(this.registerModel);
-    //Actualizamos la tabla de usuarios
-    localStorage.setItem("usuarios", JSON.stringify(data));
-    //Redireccionamos a la pagina de confirmacion
-    this.router.navigate(['/registerConfirm']);
+    //Error
+    this.errorMessage = "Error: Parece ser que ya no existe el usuario"
+    this.error = true;
   }
 
 }

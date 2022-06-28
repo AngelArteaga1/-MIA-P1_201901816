@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { Login } from 'src/app/models/Login/login';
 import { Router } from '@angular/router';
 import '../../../assets/js/smtp.js';
-import { Location, LocationStrategy, PathLocationStrategy } from '@angular/common';
 declare let Email: any;
 
 @Component({
@@ -12,7 +11,7 @@ declare let Email: any;
 })
 export class LoginComponent implements OnInit {
 
-  constructor(private router: Router, private location: Location) { 
+  constructor(private router: Router) { 
   }
 
   loginModel = new Login('', '');
@@ -22,6 +21,11 @@ export class LoginComponent implements OnInit {
   success = false;
 
   ngOnInit(): void {
+  }
+
+  public addMinutes(numOfMinutes: number, date = new Date()):Date {
+    date.setMinutes(date.getMinutes() + numOfMinutes);
+    return date;
   }
 
   validate():boolean{
@@ -83,7 +87,7 @@ export class LoginComponent implements OnInit {
       let user = data[i];
       if(user.email == this.loginModel.email && user.status == true){
           //Tenemos que ingresar el momento en donde se genero el email
-          data[i].recover = new Date();
+          data[i].recover = this.addMinutes(5);
           localStorage.setItem("usuarios", JSON.stringify(data));
           //Obtenemos el url para la recuperacion de la contraseña
           let url = window.location.origin + '/recoverPassword/' + data[i].username;

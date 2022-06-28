@@ -9,7 +9,7 @@ import { Recovery } from 'src/app/models/Recovery/recovery';
 })
 export class RecoverPasswordComponent implements OnInit {
 
-  constructor(private _Activatedroute:ActivatedRoute) { }
+  constructor(private _Activatedroute:ActivatedRoute, private router: Router) { }
 
   sub:any;
   id = '';
@@ -19,10 +19,8 @@ export class RecoverPasswordComponent implements OnInit {
 
   ngOnInit(): void {
     this.sub=this._Activatedroute.paramMap.subscribe(params => { 
-      console.log(params);
       this.id = params.get('id') || ''; 
-      console.log(this.id);   
-   });
+    });
   }
 
   public isNumber(char: string): boolean{
@@ -122,8 +120,31 @@ export class RecoverPasswordComponent implements OnInit {
   onSubmit(){
     //Validamos
     if(!this.validate()){ return; }
-    //Ahora actualizamos
-    console.log(this.id);
+    //Otenemos el listado de usuarios
+    let data = JSON.parse(localStorage.getItem("usuarios") || '{}');
+    //Tenemos que iterar la lista
+    let username = this.id;
+    for(let i = 0; i < data.length; i++){
+      //Tenemos que verificar si existe el usuario
+      let user = data[i];
+      if(user.username == username && user.status == true){
+        //Tenemos que encontrar que hayan pasado solo 5 min desde que se mando el correo
+        let today = new Date();
+        let dateEmail = new Date(data[i].recover);
+        if(today <= dateEmail){
+          //Cambiamos la contraseña por la nueva
+          data[i].password = this.recoveryModel.password;
+          //Actualizamos el listado de usuarios
+          localStorage.setItem('usuarios', JSON.stringify(data));
+          //Redireccionamos a la ventada de confirmacion
+          this.router.navigate(['/recoverConfirm']);
+        } else {
+          this.errorMessage = "Error: Ya vencio el tiempo para cambiar la contraseña."
+          this.error = true;
+          return;
+        }
+      }
+    }
   }
 
 }
