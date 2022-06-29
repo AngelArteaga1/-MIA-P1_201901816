@@ -1,1 +1,30 @@
-<h1>tree works!</h1>
+<br>
+<h2 class="text-center">Sistema de Archivos</h2>
+<br>
+<mat-tree [treeControl]="treeControl" [dataSource]="dataSource">
+    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding>
+        <button disabled class="btn btn-link">
+            <div *ngIf="node.type == '0'; then thenNodeStatus else elseNodeStatus"></div>
+            <ng-template #thenNodeStatus>
+                <fa-icon [icon]="faFolder" style="font-size:20px;" class="mr-1"></fa-icon>
+            </ng-template>
+            <ng-template #elseNodeStatus>
+                <fa-icon [icon]="faFileLines" style="font-size:20px;" class="mr-1"></fa-icon>
+            </ng-template>
+        </button>
+        <a href="{{node.path}}" style="color: #742aa7;">{{node.name}}</a>
+    </mat-tree-node>
+    <mat-tree-node *matTreeNodeDef="let node; when:hasChild" matTreeNodePadding>
+        <button matTreeNodeToggle [attr.atria-label]="'Toggle'+'node.name'" class="btn btn-link">
+            <div *ngIf="treeControl.isExpanded(node); then thenStatus else elseStatus"></div>
+            <ng-template #thenStatus>
+                <fa-icon [icon]="faFolderOpen" style="font-size:20px;" class="mr-1"></fa-icon>
+            </ng-template>
+            <ng-template #elseStatus>
+                <fa-icon [icon]="faFolder" style="font-size:20px;" class="mr-1"></fa-icon>
+            </ng-template>
+        </button>
+        <a href="{{node.path}}" style="color: #742aa7;">{{node.name}}</a>
+    </mat-tree-node>
+</mat-tree>
+<br>

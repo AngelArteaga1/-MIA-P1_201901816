@@ -64,7 +64,8 @@ export class LoginComponent implements OnInit {
           //Ingresamos el usuario en el localstorage
           localStorage.setItem("logeado", "true");
           localStorage.setItem("user", JSON.stringify(user));
-          this.router.navigate(['/']);
+          window.location.href="/"
+          return;
       }
     }
     this.errorMessage = "Error: Usuario no encontrado"

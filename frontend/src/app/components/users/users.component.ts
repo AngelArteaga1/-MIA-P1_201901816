@@ -201,7 +201,7 @@ export class UsersComponent implements OnInit {
     if(localStorage.getItem('logeado') == 'false'){this.router.navigate(['/login']);}
     //Verificamos si el usuario es administrador
     let user = JSON.parse(localStorage.getItem("user") || '{}');
-    if(user.administrador == false){this.router.navigate(['/login']);}
+    if(user.administrador == false){this.router.navigate(['/withoutAccess']);}
   }
 
   changeStatus(event: Event) {

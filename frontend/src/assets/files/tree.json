@@ -1,0 +1,87 @@
+{
+"name": "root",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "home",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "user",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "docs",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "a.txt",
+"type": "1",
+"size": "44",
+"sons": [],
+"content": "Hola, este es el contenido de un archivo, este contenido lo tengo que almacenar dentro de bloques. La idea sera ver que pasa si la cadena es como mas grande de 2 bloques Hola, este es el contenido de un archivo, este contenido lo tengo que almacenar dentro de bloques.La idea sera ver que pasa si la cadena es como mas grande de 2 bloques"
+},
+{
+"name": "usac",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+},
+{
+"name": "comida",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "hola",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+}],
+"content": ""
+},
+{
+"name": "people",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "angel",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "arti",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "listado.txt",
+"type": "1",
+"size": "44",
+"sons": [],
+"content": "Sopas, calabazas, hermosas, bellas preciosas comidas veganas, no se que estoy haciendo con mi vida jajaja pero bueno."
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}

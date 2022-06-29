@@ -23,10 +23,16 @@ export class AppComponent {
     this.grabar_localstorage();
   }
 
+  private _jsontreeURL = 'assets/files/tree.json';
   private _jsonURL = 'assets/files/users.json';
+
 
   public getJSON(): Observable<any> {
     return this.http.get(this._jsonURL);
+  }
+
+  public getTreeJSON(): Observable<any> {
+    return this.http.get(this._jsontreeURL);
   }
   
   grabar_localstorage(){
@@ -39,6 +45,10 @@ export class AppComponent {
     }
     if(localStorage.getItem('tree') === null){
       //Tenemos que leer el tree del json
+      this.getTreeJSON().subscribe(data => {
+        //Almacenamos la lista
+        localStorage.setItem('tree', JSON.stringify(data));
+      });
     }
     if(localStorage.getItem('logeado')=== null){
       //Seteamos la variable de logeo

@@ -31,6 +31,7 @@
                         <label for="username">Username</label>
                         <input name="username" #name="ngModel" type="text" class="form-control" readonly
                         aria-describedby="emailHelp" placeholder="Ingresa tu username" [(ngModel)]="registerModel.username">
+                        <small id="emailHelp" class="form-text text-muted">Tu username es el indice, no es editable.</small>
                       </div>
                 </div>
                 <div class="col-md-6">
@@ -45,7 +46,7 @@
               <label for="exampleInputEmail1">Direccion Email</label>
               <input name="email" #name="ngModel" type="email" class="form-control" readonly
               aria-describedby="emailHelp" placeholder="Ingresa tu email" [(ngModel)]="registerModel.email">
-              <small id="emailHelp" class="form-text text-muted">Nunca compartiremos tu email con alguien mas.</small>
+              <small id="emailHelp" class="form-text text-muted">Tu email es la forma de indexar la cuenta, no es editable.</small>
             </div>
             <div class="form-group">
                 <label for="nacimiento">Fecha de Nacimiento</label>

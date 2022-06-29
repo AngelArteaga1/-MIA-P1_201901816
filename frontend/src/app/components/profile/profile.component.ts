@@ -18,6 +18,9 @@ export class ProfileComponent implements OnInit {
   constructor(private _Activatedroute:ActivatedRoute, private router: Router) { }
 
   ngOnInit(): void {
+    //Verificando si ya esta logeado
+    if(localStorage.getItem('logeado') == 'false'){this.router.navigate(['/login']); return;}
+    //Ahora obtenemos el usuario
     this.sub=this._Activatedroute.paramMap.subscribe(params => { 
       this.username = params.get('username') || ''; 
       //Ahora tenemos que buscar el usuario
@@ -35,8 +38,6 @@ export class ProfileComponent implements OnInit {
           this.registerModel.numero = user.numero;
           this.registerModel.email = user.email;
           this.registerModel.nacimiento = user.nacimiento.split('T')[0];
-          console.log(user.nacimiento);
-          console.log(this.registerModel.nacimiento);
           this.registerModel.password = user.password;
           this.registerModel.confirmPassword = user.confirmPassword;
         }
@@ -192,7 +193,7 @@ export class ProfileComponent implements OnInit {
         data[i].passwordConfirm = this.registerModel.confirmPassword;
         //Ahora actualizamos el listado de usuarios
         localStorage.setItem('usuarios', JSON.stringify(data));
-        this.router.navigate(['/registerConfirm']);
+        this.router.navigate(['/profileConfirm']);
         return;
       }
     }

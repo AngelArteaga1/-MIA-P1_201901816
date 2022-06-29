@@ -8,6 +8,10 @@ import { RegisterConfirmComponent } from './components/register-confirm/register
 import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
 import { RecoverConfirmComponent } from './components/recover-confirm/recover-confirm.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { ProfileConfirmComponent } from './components/profile-confirm/profile-confirm.component';
+import { WithoutAccessComponent } from './components/without-access/without-access.component';
+import { Page404Component } from './components/page404/page404.component';
+import { FileComponent } from './components/file/file.component';
 
 const routes: Routes = [
   { path: '', component: TreeComponent },
@@ -17,7 +21,11 @@ const routes: Routes = [
   { path: 'registerConfirm', component: RegisterConfirmComponent },
   { path: 'recoverPassword/:id', component: RecoverPasswordComponent },
   { path: 'recoverConfirm', component: RecoverConfirmComponent },
-  { path: 'profile/:username', component: ProfileComponent }
+  { path: 'profile/:username', component: ProfileComponent },
+  { path: 'profileConfirm', component: ProfileConfirmComponent },
+  { path: 'withoutAccess', component: WithoutAccessComponent },
+  { path: 'file/:path', component: FileComponent },
+  { path: '**', pathMatch: 'full', component: Page404Component }
 ];
 
 @NgModule({
