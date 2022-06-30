@@ -43,13 +43,14 @@ export class AppComponent {
         localStorage.setItem('usuarios', JSON.stringify(data));
       });
     }
-    if(localStorage.getItem('tree') === null){
+    //if(localStorage.getItem('tree') === null){
       //Tenemos que leer el tree del json
       this.getTreeJSON().subscribe(data => {
         //Almacenamos la lista
         localStorage.setItem('tree', JSON.stringify(data));
       });
-    }
+    //}
+    
     if(localStorage.getItem('logeado')=== null){
       //Seteamos la variable de logeo
       localStorage.setItem('logeado', 'false');

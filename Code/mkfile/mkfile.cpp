@@ -1034,6 +1034,7 @@ int make_path_file(int inodo_start, SuperBloque bloquesito, char fit, char * tok
     //Obtenemos el size en bytes de contenido
     char contChar[cont.length()];
     strcpy(contChar, cont.c_str());
+    //cout << contChar << endl;
 
     int size_bloques = sizeof(contChar);
     //Obtenemos la cantidad de bloques que tendremos que usar para guardar el contenido
@@ -1272,15 +1273,15 @@ void make_file(int start, string pathDisk, string path, int size, string cont, b
     } else {
         if(size > 0){
             //Creamos el cont con el size
-            char cont[size];
+            string cont = "";
             int contador = 0;
             for(int i = 0; i < size; i++){
                 if(contador == 10) contador = 0;
-                cont[i] = static_cast<char>(contador+48);
+                cont += static_cast<char>(contador+48);
                 contador++;
             }
-            string s(cont);
-            contenido = s;
+            contenido = cont;
+            cout << "Este es el string: " << cont << endl;
         } else {
             cout << "[Error] > No ingreso el parametro size ni el cont" << endl; 
             return;

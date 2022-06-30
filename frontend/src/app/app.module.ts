@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatTreeModule } from '@angular/material/tree';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialogModule } from '@angular/material/dialog';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -22,6 +23,7 @@ import { WithoutAccessComponent } from './components/without-access/without-acce
 import { Page404Component } from './components/page404/page404.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FileComponent } from './components/file/file.component';
+import { DirectoryComponent } from './components/directory/directory.component';
 
 @NgModule({
   declarations: [
@@ -37,7 +39,8 @@ import { FileComponent } from './components/file/file.component';
     ProfileConfirmComponent,
     WithoutAccessComponent,
     Page404Component,
-    FileComponent
+    FileComponent,
+    DirectoryComponent
   ],
   imports: [
     BrowserModule,
@@ -48,7 +51,8 @@ import { FileComponent } from './components/file/file.component';
     BrowserAnimationsModule,
     MatTreeModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatDialogModule
   ],
   providers: [],
   bootstrap: [AppComponent]

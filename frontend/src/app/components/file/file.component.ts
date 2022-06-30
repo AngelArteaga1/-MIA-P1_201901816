@@ -59,7 +59,6 @@ export class FileComponent implements OnInit {
 
   saveContent(nodo:Tree, path:string[]){
     let tmp = path.shift();
-    console.log(tmp);
     for(let i = 0; i < nodo.sons.length; i++){
       if(path.length == 0){
         //Quiere decir que el file esta adentro

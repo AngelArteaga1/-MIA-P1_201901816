@@ -1,0 +1,34 @@
+<br>
+<br>    
+
+<div class="list-group">
+    <a href="{{parentPath}}" class="list-group-item list-group-item-action active text-center text-light"
+    style="font-size: 22px;">
+        <fa-icon [icon]="faFolder" class="mr-1"></fa-icon> 
+        {{directoryName}}
+    </a>
+    <div *ngFor="let son of children; index as i; first as isFirst">
+        <a href="{{son.path}}" class="list-group-item list-group-item-action">
+            <div *ngIf="son.type == '0'; then thenNodeStatus else elseNodeStatus"></div>
+            <ng-template #thenNodeStatus>
+                <fa-icon [icon]="faFolder" style="font-size:20px;" class="mr-1"></fa-icon>
+            </ng-template>
+            <ng-template #elseNodeStatus>
+                <fa-icon [icon]="faFileLines" style="font-size:20px;" class="mr-1"></fa-icon>
+            </ng-template>
+            {{son.name}}
+        </a>
+    </div>
+
+</div>
+<br>
+<div class="text-right">
+    <input name="blockName" #name="ngModel" type="email" class="form-control mb-2" id="exampleInputEmail1" 
+    aria-describedby="emailHelp" placeholder="Nombre Carpeta/Archivo" [(ngModel)]="blockName">
+    <button type="submit" class="btn btn-info mr-2" (click)="createFile()">Crear Archivo</button>
+    <button type="button" class="btn btn-primary mr-2" (click)="createDirectory()" >Crear Carpeta</button>
+    <button type="button" class="btn btn-danger" (click)="redirectTree()">Regresar</button>
+</div>
+
+<br>   
+<br>    
