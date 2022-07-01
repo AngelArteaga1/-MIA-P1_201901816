@@ -19,7 +19,7 @@
     <a href="/" class="mr-4 text-white align-middle"><fa-icon [icon]="faTree" style="font-size:25px;" class="mr-1"></fa-icon> Arbol</a>
     <a href="/users" class="mr-4 text-white align-middle"><fa-icon [icon]="faListCheck" style="font-size:25px;" class="mr-1"></fa-icon> Listado de Usuario</a>
     <a href="/profile/{{username}}" class="mr-4 text-white align-middle"><fa-icon [icon]="faUserAstronaut" style="font-size:25px;" class="mr-1"></fa-icon> {{username}}</a>
-    <a href="/login" class="mr-4 text-white align-middle"><fa-icon [icon]="faRightFromBracket" style="font-size:25px;" class="mr-1"></fa-icon> Cerrar Sesion</a>
+    <a href="#" (click)="logout()" class="mr-4 text-white align-middle"><fa-icon [icon]="faRightFromBracket" style="font-size:25px;" class="mr-1"></fa-icon> Cerrar Sesion</a>
 </div>
 
 <div class="content" role="main">

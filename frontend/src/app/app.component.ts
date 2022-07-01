@@ -5,6 +5,7 @@ import { faUserAstronaut } from '@fortawesome/free-solid-svg-icons'
 import { faTree } from '@fortawesome/free-solid-svg-icons'
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { faListCheck} from '@fortawesome/free-solid-svg-icons'
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,7 @@ export class AppComponent {
   faListCheck = faListCheck;
   username = '';
 
-  constructor(private http: HttpClient){
+  constructor(private http: HttpClient, private router: Router){
     this.grabar_localstorage();
   }
 
@@ -64,6 +65,13 @@ export class AppComponent {
     if(localStorage.getItem('intentos') === null){
       localStorage.setItem('intentos', '0');
     }
+  }
+
+  logout(){
+    //logout
+    localStorage.setItem('logeado', 'false');
+    //redirect
+    this.router.navigate(['/login']);
   }
 
 }
