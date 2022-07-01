@@ -25,12 +25,16 @@ export class DirectoryComponent implements OnInit {
   stringPath= '';
   parentPath='/directory/';
   directoryName = '';
+  errorMessage = "";
+  error = false;
 
 
   constructor(private _Activatedroute:ActivatedRoute, 
     private router: Router) { }
 
   ngOnInit(): void {
+    //Verificando si ya esta logeado
+    if(localStorage.getItem('logeado') == 'false'){this.router.navigate(['/login']);}
     //Ahora obtenemos el usuario
     this.sub=this._Activatedroute.paramMap.subscribe(params => { 
       //Seteamos el path
@@ -79,19 +83,79 @@ export class DirectoryComponent implements OnInit {
       }
     }
   }
-
-  createFile(){
-    console.log(this.blockName);
-    //Tenemos que ingresar el archivo con el nombre
-
-    //Actualizamos la pagina
+  
+  setFile(nodo:Tree, path:string[]){
+    let tmp = path.shift();
+    if(path.length == 0){
+      //Deberiamos de estar dentro de nuestra carpeta
+      if(tmp == nodo.name && nodo.type == '0'){
+        console.log('sale?');
+        //Ingresamos el nuevo file a sus hijos
+        let file = new Tree(this.blockName, '1', '0', '', []);
+        nodo.sons.push(file);
+      }
+      return;
+    }
+    //Quiere decir que tenemos que seguir iterando
+    for(let i = 0; i < nodo.sons.length; i++){
+      //Quiere decir que faltan carpetas
+      if(nodo.sons[i].name == path[0] && nodo.sons[i].type == '0'){
+        this.setFile(nodo.sons[i], path);
+      }
+    }
   }
 
-  createDirectory(){
-    console.log(this.blockName);
-    //Tenemos que ingresar el archivo con el nombre
-
+  createFile(){
+    //Validamos
+    if(this.blockName == ''){
+      this.error = true;
+      this.errorMessage = 'Error, debe de ingresar el nombre del nuevo archivo';
+      return;
+    }
+    //Ingresamos el archivo a los hijos de este nodo
+    let arbolito = JSON.parse(localStorage.getItem('tree') || '{}') as Tree;
+    this.setFile(arbolito, [...this.path]);
+    //Actualizamos el arbol
+    localStorage.setItem('tree', JSON.stringify(arbolito));
     //Actualizamos la pagina
+    window.location.reload();
+  }
+
+  setDirectory(nodo:Tree, path:string[]){
+    let tmp = path.shift();
+    if(path.length == 0){
+      //Deberiamos de estar dentro de nuestra carpeta
+      if(tmp == nodo.name && nodo.type == '0'){
+        //Ingresamos el nuevo file a sus hijos
+        let file = new Tree(this.blockName, '0', '0', '', []);
+        nodo.sons.push(file);
+      }
+      return;
+    }
+    //Quiere decir que tenemos que seguir iterando
+    for(let i = 0; i < nodo.sons.length; i++){
+      //Quiere decir que faltan carpetas
+      if(nodo.sons[i].name == path[0] && nodo.sons[i].type == '0'){
+        this.setDirectory(nodo.sons[i], path);
+      }
+    }
+  }
+
+
+  createDirectory(){
+    //Validamos
+    if(this.blockName == ''){
+      this.error = true;
+      this.errorMessage = 'Error, debe de ingresar el nombre de la nueva carpeta';
+      return;
+    }
+    //Ingresamos el archivo a los hijos de este nodo
+    let arbolito = JSON.parse(localStorage.getItem('tree') || '{}') as Tree;
+    this.setDirectory(arbolito, [...this.path]);
+    //Actualizamos el arbol
+    localStorage.setItem('tree', JSON.stringify(arbolito));
+    //Actualizamos la pagina
+    window.location.reload();
   }
 
   redirectTree(){

@@ -43,13 +43,13 @@ export class AppComponent {
         localStorage.setItem('usuarios', JSON.stringify(data));
       });
     }
-    //if(localStorage.getItem('tree') === null){
+    if(localStorage.getItem('tree') === null){
       //Tenemos que leer el tree del json
       this.getTreeJSON().subscribe(data => {
         //Almacenamos la lista
         localStorage.setItem('tree', JSON.stringify(data));
       });
-    //}
+    }
     
     if(localStorage.getItem('logeado')=== null){
       //Seteamos la variable de logeo
@@ -59,6 +59,10 @@ export class AppComponent {
     if(localStorage.getItem('user') !== null){
       let user = JSON.parse(localStorage.getItem('user') || '{}');
       this.username = user.username;
+    }
+    //Seteamos los intentos de ingreso
+    if(localStorage.getItem('intentos') === null){
+      localStorage.setItem('intentos', '0');
     }
   }
 

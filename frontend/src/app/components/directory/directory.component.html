@@ -22,6 +22,9 @@
 
 </div>
 <br>
+<div *ngIf="error" class="alert alert-danger" role="alert">
+    {{errorMessage}}
+</div>
 <div class="text-right">
     <input name="blockName" #name="ngModel" type="email" class="form-control mb-2" id="exampleInputEmail1" 
     aria-describedby="emailHelp" placeholder="Nombre Carpeta/Archivo" [(ngModel)]="blockName">

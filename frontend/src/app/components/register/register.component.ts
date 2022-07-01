@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Register } from 'src/app/models/Register/register';
 import { Router } from '@angular/router';
+import '../../../assets/js/smtp.js';
+declare let Email: any;
 
 @Component({
   selector: 'app-register',
@@ -173,6 +175,171 @@ export class RegisterComponent implements OnInit {
     data.push(this.registerModel);
     //Actualizamos la tabla de usuarios
     localStorage.setItem("usuarios", JSON.stringify(data));
+    //Enviamos el email con la fecha y hora del registro
+    let htmlEmail = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="EN">
+      <head>
+        <style type="text/css">
+          @media screen {
+            @font-face {
+              font-family: "Lato";
+              font-style: normal;
+              font-weight: 400;
+              src: local("Lato Regular"), local("Lato-Regular"), url(https://fonts.gstatic.com/s/lato/v11/qIIYRU-oROkIk8vfvxw6QvesZW2xOQ-xsNqO47m55DA.woff) format("woff");
+            }
+            body, html {
+              margin: 0px;
+              padding: 0px;
+              -webkit-font-smoothing: antialiased;
+              text-size-adjust: none;
+              width: 100% !important;
+              background: #F9F9FF;
+              font-family: "Lato", "Lucida Grande", "Lucida Sans Unicode", Tahoma, Sans-Serif;
+              word-break: break-word;
+            }
+            .contentMainTable {
+              background: #FFFFFF;
+              border: 1px solid #EEEEFF;
+              margin-top: 98px;
+              margin-bottom: 69px;
+              margin-left: auto;
+              margin-right: auto;
+              width: 600px;
+              height: 503px;
+            }
+            .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {
+              line-height: 100%;
+            }
+            .ExternalClass {
+              width: 100%;
+            }
+            .logoImage {
+              margin-top: -50px;
+              padding-bottom: 7px;
+            }
+            h1 {
+              font-weight: bold;
+              font-size: 30px;
+              font-family: "Lato";
+              letter-spacing: 0px;
+              color: #25254E;
+            }
+            p {
+              font-weight: 300;
+              font-size: 14px;
+              letter-spacing: 0px;
+              color: #4D4D80;
+            }
+            .greyLine {
+              border: 1px solid #CED7F7;
+              width: 100%;
+              margin-top: 32px
+            }
+            h2 {
+              font-weight: bold;
+              font-size: 15px;
+              letter-spacing: 0px;
+              color: #25254E;
+            }
+            h3 {
+              font-weight: 300;
+              font-size: 15px;
+              letter-spacing: 0px;
+              color: #4D4D80;
+            }
+            .footer {
+              margin-top: 32px;
+              margin-bottom: 20px;
+              font-size: 11px;
+              font-weight: 300px;
+              color: #4D4D80;
+            }
+            .footerIcons img {
+              margin-left: 11px;
+              margin-right: 11px;
+            }
+            .blueButton {
+              background: #8AA1EB;
+              border-radius: 10px;
+              padding: 17px 35px;
+              border: none;
+              color: #FFFFFF;
+              font-size: 15px;
+              margin-bottom: 32px;
+              cursor: pointer;
+            }
+            .blueButton:focus {
+              outline: none;
+              border: 2px solid #5457FF;
+              padding: 15px 33px;
+            }
+            @media only screen and (max-width: 480px) {
+              table, table tr td, table td {
+                width: 100%;
+              }
+              .contentMainTable {
+                width: 100%;
+                border: none;
+              }
+              body, html {
+                background: #FFFFFF;
+              }
+              h1 {
+                font-size: 24px;
+              }
+            }
+          }
+        </style>
+        <title>
+        </title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      </head>
+      <body style="padding:0; margin: 0;">
+        <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="body_table">
+          <tbody>
+            <tr>
+              <td align="center" valign="top"> 
+                <table border="0" cellpadding="20" cellspacing="0" width="100%" class="contentMainTable">
+                  <tbody>
+                    <tr>
+                      <td align="center" valign="top"> 
+                        <table border="0" cellpadding="20" cellspacing="0" width="100%" id="content">
+                          <tbody>
+                            <tr>
+                              <td align="center" valign="top">
+                                <span class="isDesktop">
+                                  <h1 style="margin-bottom: 32px">
+                                    Solicitud de cuenta de FuBox Correcta!
+                                  </h1>
+                                  <p style="margin-top:0px">Podras tener acceso a todas las nuevas opciones de almacenamiento en la nube.
+                                  Fecha y Hora del registro: ` + new Date() + `
+                                  </p></span>
+                                <div class="greyLine">
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+    </html>`
+    //Ahora mandamos el email
+    Email.send({
+      Host : 'smtp.elasticemail.com',
+      Username : 'angel.arteaga01.aa@gmail.com',
+      Password : '60370CBD05FC5D40D1691ED8340452947BEF',
+      To : this.registerModel.email,
+      From : 'angel.arteaga01.aa@gmail.com',
+      Subject : 'Confirmacion de Solicitud - FuBox',
+      Body : htmlEmail
+    }).then( console.log("Pues todo bien bro jaja") );
     //Redireccionamos a la pagina de confirmacion
     this.router.navigate(['/registerConfirm']);
   }

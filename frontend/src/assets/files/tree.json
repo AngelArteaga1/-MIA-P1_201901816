@@ -14,19 +14,132 @@
 "size": "0",
 "sons": [
 {
-"name": "docs",
+"name": "mia",
 "type": "0",
 "size": "0",
 "sons": [
 {
-"name": "a.txt",
-"type": "1",
-"size": "44",
-"sons": [],
-"content": "Hola, este es el contenido de un archivo, este contenido lo tengo que almacenar dentro de bloques. La idea sera ver que pasa si la cadena es como mas grande de 2 bloques Hola, este es el contenido de un archivo, este contenido lo tengo que almacenar dentro de bloques.La idea sera ver que pasa si la cadena es como mas grande de 2 bloques"
+"name": "fase1",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
 },
 {
-"name": "usac",
+"name": "carpeta2",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "a1",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a2",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a3",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a4",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a5",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a6",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a7",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a8",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a9",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+},
+{
+"name": "a10",
+"type": "0",
+"size": "0",
+"sons": [
+],
+"content": ""
+}],
+"content": ""
+},
+{
+"name": "carpeta3",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta7",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta8",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta9",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta10",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta11",
 "type": "0",
 "size": "0",
 "sons": [
@@ -36,14 +149,65 @@
 "content": ""
 }],
 "content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
 },
 {
-"name": "comida",
+"name": "carpeta4",
 "type": "0",
 "size": "0",
 "sons": [
 {
-"name": "hola",
+"name": "carpeta7",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta8",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta9",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta10",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta11",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta7",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta8",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta9",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta10",
+"type": "0",
+"size": "0",
+"sons": [
+{
+"name": "carpeta11",
 "type": "0",
 "size": "0",
 "sons": [
@@ -51,13 +215,27 @@
 "content": ""
 }],
 "content": ""
-},
-{
-"name": "people",
-"type": "0",
-"size": "0",
-"sons": [
-],
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
+"content": ""
+}],
 "content": ""
 },
 {
@@ -66,6 +244,13 @@
 "size": "44",
 "sons": [],
 "content": "01234567890123456789012345678901234567890123"
+},
+{
+"name": "pepe.txt",
+"type": "1",
+"size": "44",
+"sons": [],
+"content": " "
 },
 {
 "name": "angel",

@@ -1,0 +1,25 @@
+Mkdisk $size=>64 $path=>"/home/angel/Documentos/Disquitos/" $name=>Disco_1.dsk
+fdisk $sizE=>15 @unit=>M $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
+mount $path=>"/home/angel/Documentos/Disquitos/Disco_1.dsk" $name=>Primaria1
+MkfS $id=>vda1 @type=>fast
+
+mkdir $id=>vda1 $path=>"/home/user/mia/fase1" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta3/carpeta7/carpeta8/carpeta9/carpeta10/carpeta11" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta4/carpeta7/carpeta8/carpeta9/carpeta10/carpeta11/carpeta7/carpeta8/carpeta9/carpeta10/carpeta11" @p
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a1"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a2"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a3"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a4"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a5"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a6"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a7"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a8"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a9"
+mkdir $id=>vda1 $path=>"/home/user/mia/carpeta2/a10"
+mkFile @SIZE=>44 $id=>vda1 $PatH=>"/home/num.txt" @p
+mkFile @SIZE=>0 $id=>vda1 $PatH=>"/home/pepe.txt" @p
+mkFile @SIZE=>15 $id=>vda1 $PatH=>"/home/angel/arti/listado.txt" @p @cont=>"/home/angel/Github/-MIA-P1_201901816/Cont/contenido2.txt"
+
+rep $id=>vda1 $Path=>"/home/angel/Documentos/Reportitos/reporte6.png" $name=>tree
+Syncronice @id=>vda1 @Path=>"/home/angel/Github/-MIA-P1_201901816/frontend/src/assets/files/"

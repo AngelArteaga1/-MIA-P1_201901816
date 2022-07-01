@@ -20,20 +20,30 @@ export class FileComponent implements OnInit {
   fileModel = new FileContent('');
   errorMessage = "";
   successMessage = "";
+  parentPath='/directory/';
   error = false;
   success = false;
 
   constructor(private _Activatedroute:ActivatedRoute, private router: Router) { }
 
   ngOnInit(): void {
+    //Verificando si ya esta logeado
+    if(localStorage.getItem('logeado') == 'false'){this.router.navigate(['/login']);}
     //Ahora obtenemos el usuario
     this.sub=this._Activatedroute.paramMap.subscribe(params => { 
       //Seteamos el path
       this.path = (params.get('path')?.split('|')) || ['']; 
       this.path.shift();
+      //Seteamos url del padre
+      for(let i = 0; i < this.path.length-1; i++){
+        this.parentPath += "|" + this.path[i];
+      }
+      if(this.parentPath == '/directory/'){
+        this.parentPath = '/'
+      }
       this.path.shift();
       //Seteamos el filename
-      this.fileName = this.path[this.path.length-1]
+      this.fileName = this.path[this.path.length-1];
       //Seteamos el content
       let arbolito = JSON.parse(localStorage.getItem('tree') || '{}') as Tree;
       this.setContent(arbolito, [...this.path]);

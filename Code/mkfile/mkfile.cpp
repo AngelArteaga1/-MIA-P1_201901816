@@ -1271,21 +1271,16 @@ void make_file(int start, string pathDisk, string path, int size, string cont, b
             file.close();
         }
     } else {
-        if(size > 0){
-            //Creamos el cont con el size
-            string cont = "";
-            int contador = 0;
-            for(int i = 0; i < size; i++){
-                if(contador == 10) contador = 0;
-                cont += static_cast<char>(contador+48);
-                contador++;
-            }
-            contenido = cont;
-            cout << "Este es el string: " << cont << endl;
-        } else {
-            cout << "[Error] > No ingreso el parametro size ni el cont" << endl; 
-            return;
+        //Creamos el cont con el size
+        string cont = "";
+        int contador = 0;
+        for(int i = 0; i < size; i++){
+            if(contador == 10) contador = 0;
+            cont += static_cast<char>(contador+48);
+            contador++;
         }
+        if(cont == "") cont = " ";
+        contenido = cont;
     }
 
     //Primero obtenemos el superbloque

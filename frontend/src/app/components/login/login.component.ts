@@ -39,6 +39,11 @@ export class LoginComponent implements OnInit {
       this.error = true;
       return false;
     }
+    if(localStorage.getItem('intentos') == '3'){
+      this.errorMessage = "Error: Ya ha realizo 3 intentos, usuario bloqueado"
+      this.error = true;
+      return false;
+    }
     return true;
   }
 
@@ -70,6 +75,10 @@ export class LoginComponent implements OnInit {
     }
     this.errorMessage = "Error: Usuario no encontrado"
     this.error = true;
+    //Tenemos que sumar un intento
+    let intentos = Number(localStorage.getItem('intentos'));
+    intentos = intentos + 1;
+    localStorage.setItem('intentos', String(intentos));
     console.log(this.loginModel);
 }
 
